@@ -230,6 +230,35 @@
   </div>
 
   <div class="card">
+    <div class="card-title">📋 活動資訊（顯示在簽到表表頭）</div>
+    <div class="form-group">
+      <label>活動名稱</label>
+      <input type="text" id="adm-event-name" placeholder="115年ICOPE教育訓練工作坊">
+    </div>
+    <div class="form-group">
+      <label>北部場日期</label>
+      <input type="text" id="adm-event-date0" placeholder="115年6月16日（週二）">
+    </div>
+    <div class="form-group">
+      <label>北部場地點</label>
+      <input type="text" id="adm-event-loc0" placeholder="台北市中山區松江路131號7樓">
+    </div>
+    <div class="form-group">
+      <label>南部場日期</label>
+      <input type="text" id="adm-event-date1" placeholder="115年6月30日（週二）">
+    </div>
+    <div class="form-group">
+      <label>南部場地點</label>
+      <input type="text" id="adm-event-loc1" placeholder="嘉義縣朴子市嘉朴路西段2號">
+    </div>
+    <div class="form-group">
+      <label>繼續教育時數（積分用）</label>
+      <input type="text" id="adm-event-hours" placeholder="6小時">
+    </div>
+    <button class="btn btn-sm btn-primary" onclick="saveEventInfo()">儲存</button>
+  </div>
+
+  <div class="card">
     <div class="card-title">⏰ 簽到設定</div>
     <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
       設定簽到截止時間：超過時間後學員無法再簽到（留空 = 隨時可簽到）
@@ -557,16 +586,23 @@ async function submitCheckin(){
   const recs=records();
   const exists=recs.find(r=>r.session===ciSession&&r.name===name);
   if(exists&&exists.checkin){showAlert('ci-alert','info','您已完成簽到');return;}
+  const newRec = {id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,sigUrl:'',registered:true};
   if(exists){exists.checkin=now;exists.sig=sig;exists.unit=unit;exists.idno=idno;exists.role=role;}
-  else{recs.push({id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,registered:true});}
+  else{recs.push(newRec);}
   saveRecords(recs);
 
-  // 雲端上傳
+  // 雲端上傳，捕捉簽名 Drive URL
   const apiUrl=getApiUrl();
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
     try{
-      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:true})});
+      const resp=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:true})});
+      const json=await resp.json();
+      if(json.sigUrl){
+        const recs2=records();
+        const target=recs2.find(r=>r.id===newRec.id||(r.session===ciSession&&r.name===name));
+        if(target){target.sigUrl=json.sigUrl;saveRecords(recs2);}
+      }
     }catch(e){console.warn('雲端上傳失敗，資料已存本機',e);}
     document.getElementById('loading-overlay').classList.remove('show');
   }
@@ -620,6 +656,7 @@ async function submitCheckout(){
 //  ADMIN
 // ═══════════════════════════════════════════════
 function refreshAdmin(){
+  refreshEventInfo();
   updateCiCodeUI();
   updateCiTimeUI();
   const labels=sessionLabels();
@@ -717,21 +754,57 @@ function refreshRecords(){
   </tr>`).join('');
 }
 
+function getEventInfo(){return ls('icope_event_info',{name:'115年長者內在能力檢測(ICOPE)服務人員教育訓練－「從ICOPE到社會處方箋」教育訓練',date0:'115年6月16日（二）13:30-16:30',loc0:'',date1:'115年6月30日（二）13:30-16:30',loc1:'',hours:'3小時'});}
+function saveEventInfo(){
+  lsSave('icope_event_info',{
+    name: document.getElementById('adm-event-name').value.trim(),
+    date0:document.getElementById('adm-event-date0').value.trim(),
+    loc0: document.getElementById('adm-event-loc0').value.trim(),
+    date1:document.getElementById('adm-event-date1').value.trim(),
+    loc1: document.getElementById('adm-event-loc1').value.trim(),
+    hours:document.getElementById('adm-event-hours').value.trim(),
+  });
+  alert('活動資訊已儲存');
+}
+function refreshEventInfo(){
+  const e=getEventInfo();
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  set('adm-event-name',e.name);set('adm-event-date0',e.date0);set('adm-event-loc0',e.loc0);
+  set('adm-event-date1',e.date1);set('adm-event-loc1',e.loc1);set('adm-event-hours',e.hours);
+}
+
 function exportCsv(type){
   const recs=records().filter(r=>r.checkin);
   const labels=sessionLabels();
-  let rows,name;
+  const ev=getEventInfo();
+  const sessName=i=>labels[i]||['北部場次','南部場次'][i]||i;
+  const csvRow=arr=>arr.map(v=>{const s=String(v==null?'':v);return /[,\"\n]/.test(s)?'\"'+s.replace(/\"/g,'\"\"')+'\"':s;}).join(',');
+  let rows,fname;
+
   if(type==='credit'){
-    const header='場次,姓名,服務單位,身份類別,身份證字號,簽到時間,簽退時間';
-    rows=[header,...recs.map(r=>[labels[r.session]||r.session,r.name,r.unit||'',r.role||'',r.idno||'',r.checkin||'',r.checkout||''].join(','))];
-    name='ICOPE繼續教育積分簽到表.csv';
+    rows=[
+      csvRow(['活動名稱',ev.name]),
+      csvRow(['北部場','日期：'+ev.date0,'地點：'+ev.loc0]),
+      csvRow(['南部場','日期：'+ev.date1,'地點：'+ev.loc1]),
+      csvRow(['繼續教育時數',ev.hours]),
+      '',
+      csvRow(['場次','姓名','服務單位','身份類別','身份證字號','簽到時間','簽退時間','電子簽名連結']),
+      ...recs.map(r=>csvRow([sessName(r.session),r.name,r.unit||'',r.role||'',r.idno||'',r.checkin||'',r.checkout||'',r.sigUrl||'']))
+    ];
+    fname='ICOPE繼續教育積分簽到表.csv';
   } else {
-    const header='序號,場次,姓名,服務單位,簽到時間';
-    rows=[header,...recs.map((r,i)=>[i+1,labels[r.session]||r.session,r.name,r.unit||'',r.checkin||''].join(','))];
-    name='ICOPE核銷簽到表.csv';
+    rows=[
+      csvRow(['活動名稱',ev.name]),
+      csvRow(['北部場','日期：'+ev.date0,'地點：'+ev.loc0]),
+      csvRow(['南部場','日期：'+ev.date1,'地點：'+ev.loc1]),
+      '',
+      csvRow(['序號','場次','姓名','服務單位','活動時間','電子簽名連結']),
+      ...recs.map((r,i)=>csvRow([i+1,sessName(r.session),r.name,r.unit||'','13:30-17:30',r.sigUrl||'']))
+    ];
+    fname='ICOPE核銷簽到表.csv';
   }
   const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
 }
 
 // ═══════════════════════════════════════════════
