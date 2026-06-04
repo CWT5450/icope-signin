@@ -348,6 +348,17 @@
     <button class="btn btn-sm btn-secondary" onclick="changePw()">更改密碼</button>
     <div id="adm-pw-alert" class="alert" style="margin-top:8px;"></div>
   </div>
+
+  <div class="card" style="border:1.5px solid #ffcdd2;background:#fff5f5;">
+    <div class="card-title" style="color:#c0392b;">🗑️ 清除測試資料</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#fff;padding:8px 10px;border-radius:8px;">
+      清除<strong>所有簽到紀錄</strong>（本機 + 雲端「簽到紀錄」分頁），用於正式活動前清掉測試資料。<br>
+      ⚠️ 不會刪除證書版的報名資料，但若測試時有用過「現場報名」，請自行到證書版手動刪除測試列。<br>
+      <strong style="color:#c0392b;">此動作無法復原！</strong>
+    </p>
+    <button class="btn btn-sm btn-danger" onclick="clearTestData()">🗑️ 清除所有簽到測試資料</button>
+    <div id="adm-clear-status" style="font-size:12px;margin-top:8px;color:var(--gray);"></div>
+  </div>
 </div>
 
 <!-- ══ 紀錄頁 ══ -->
@@ -763,6 +774,30 @@ function changePw(){
   lsSave('icope_pw',p1);
   al.className='alert success show';al.textContent='密碼已更新';
   document.getElementById('adm-pw1').value='';document.getElementById('adm-pw2').value='';
+}
+
+async function clearTestData(){
+  if(!confirm('確定要清除所有簽到測試資料嗎？\n\n會清除：\n• 本機簽到紀錄\n• 雲端「簽到紀錄」分頁\n\n不會動到證書版報名資料。\n此動作無法復原！')) return;
+  const status=document.getElementById('adm-clear-status');
+  // 清本機
+  localStorage.removeItem('icope_records');
+  status.textContent='本機已清除，正在清除雲端…';
+  // 清雲端
+  const apiUrl=getApiUrl();
+  if(apiUrl){
+    try{
+      document.getElementById('loading-overlay').classList.add('show');
+      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'clearRecords'})});
+      document.getElementById('loading-overlay').classList.remove('show');
+      status.textContent='✅ 已清除本機與雲端所有簽到測試資料';
+    }catch(e){
+      document.getElementById('loading-overlay').classList.remove('show');
+      status.textContent='⚠️ 本機已清除，但雲端清除失敗，請稍後重試';
+    }
+  } else {
+    status.textContent='✅ 已清除本機簽到資料';
+  }
+  refreshRecords();
 }
 
 // ═══════════════════════════════════════════════
