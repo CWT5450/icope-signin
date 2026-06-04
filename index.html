@@ -125,6 +125,7 @@
         <div class="name-dropdown" id="name-dropdown"></div>
       </div>
       <div class="name-status" id="name-status"></div>
+      <button type="button" id="ci-onsite-btn" onclick="enableOnsite()" style="display:none;margin-top:8px;width:100%;background:#fff3e0;color:#e65100;border:1.5px solid #ffb74d;" class="btn btn-sm">✚ 我是現場報名（非預先報名者）</button>
     </div>
 
     <div class="form-group">
@@ -405,6 +406,11 @@ const UNIT_MAP        = {"邱沛妮": "苗栗縣政府衛生局", "羅秀珍": "
 // ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
+const VENUE_FULL = [
+  '【北部場】115年6月16日（週二）｜TCCC台灣文創訓練中心(1館)- 752、753會議室（台北市中山區松江路131號7樓之1）',
+  '【南部場】115年6月30日（週二）｜長庚科技大學嘉義校區- 百人階梯教室（嘉義縣朴子市嘉朴路西段2號）'
+];
+let _onsiteMode = false;
 let ciSession = 0, coSession = 0;
 let sigDrawing = false, sigHasMark = false;
 let sigCtx, sigCanvas;
@@ -510,18 +516,41 @@ function hideDropdown(){
 function checkNameStatus(name){
   const el=document.getElementById('name-status');
   const btn=document.getElementById('ci-submit-btn');
+  const onsiteBtn=document.getElementById('ci-onsite-btn');
+  _onsiteMode=false;
   if(!name){clearNameStatus();return;}
   const list=getCurrentList();
   const found=list.includes(name);
-  el.className='name-status '+(found?'ok':'ng');
-  el.textContent=found?'✅ 已確認報名，歡迎參加！':'❌ 查無此報名資料，請聯繫工作人員確認';
-  btn.disabled=!found;
+  if(found){
+    el.className='name-status ok';
+    el.textContent='✅ 已確認報名，歡迎參加！';
+    btn.disabled=false;
+    if(onsiteBtn) onsiteBtn.style.display='none';
+  } else {
+    el.className='name-status ng';
+    el.textContent='⚠️ 查無預先報名資料。若您是現場報名，請點下方按鈕。';
+    btn.disabled=true;
+    if(onsiteBtn) onsiteBtn.style.display='block';
+  }
+}
+
+function enableOnsite(){
+  _onsiteMode=true;
+  const el=document.getElementById('name-status');
+  el.className='name-status ok';
+  el.textContent='✚ 現場報名模式：將補登記至名單，請務必填寫服務單位';
+  document.getElementById('ci-submit-btn').disabled=false;
+  const onsiteBtn=document.getElementById('ci-onsite-btn');
+  if(onsiteBtn) onsiteBtn.style.display='none';
 }
 
 function clearNameStatus(){
   const el=document.getElementById('name-status');
   el.className='name-status';
   el.textContent='';
+  _onsiteMode=false;
+  const onsiteBtn=document.getElementById('ci-onsite-btn');
+  if(onsiteBtn) onsiteBtn.style.display='none';
   document.getElementById('ci-submit-btn').disabled=false;
 }
 
@@ -568,7 +597,9 @@ async function submitCheckin(){
 
   if(!isCiOpen()){showAlert('ci-alert','error','簽到時間已截止，請聯繫工作人員');return;}
   const list=getCurrentList();
-  if(!list.includes(name)){showAlert('ci-alert','error','查無報名資料，請聯繫工作人員');return;}
+  const isRegistered=list.includes(name);
+  if(!isRegistered && !_onsiteMode){showAlert('ci-alert','error','查無報名資料，請點「現場報名」按鈕或聯繫工作人員');return;}
+  if(_onsiteMode && !document.getElementById('ci-unit').value.trim()){showAlert('ci-alert','error','現場報名請務必填寫服務單位');return;}
   const ciCodeVal=document.getElementById('ci-verify-code');
   const ciCodeReq=ciCodes()[ciSession];
   if(ciCodeReq&&(!ciCodeVal||ciCodeVal.value.trim()!==String(ciCodeReq))){showAlert('ci-alert','error','驗證碼錯誤，請向工作人員確認');return;}
@@ -586,7 +617,7 @@ async function submitCheckin(){
   const recs=records();
   const exists=recs.find(r=>r.session===ciSession&&r.name===name);
   if(exists&&exists.checkin){showAlert('ci-alert','info','您已完成簽到');return;}
-  const newRec = {id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,sigUrl:'',registered:true};
+  const newRec = {id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,sigUrl:'',registered:isRegistered,onsite:!isRegistered};
   if(exists){exists.checkin=now;exists.sig=sig;exists.unit=unit;exists.idno=idno;exists.role=role;}
   else{recs.push(newRec);}
   saveRecords(recs);
@@ -596,7 +627,7 @@ async function submitCheckin(){
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
     try{
-      const resp=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:true})});
+      const resp=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,venueFull:VENUE_FULL[ciSession]})});
       const json=await resp.json();
       if(json.sigUrl){
         const recs2=records();
@@ -773,11 +804,29 @@ function refreshEventInfo(){
   set('adm-event-date1',e.date1);set('adm-event-loc1',e.loc1);set('adm-event-hours',e.hours);
 }
 
-function exportCsv(type){
-  const recs=records().filter(r=>r.checkin);
+async function getExportRecords(){
+  const apiUrl=getApiUrl();
+  if(apiUrl){
+    try{
+      document.getElementById('loading-overlay').classList.add('show');
+      const r=await fetch(apiUrl+'?action=getRecords');
+      const j=await r.json();
+      document.getElementById('loading-overlay').classList.remove('show');
+      if(j.success && Array.isArray(j.records)){
+        return j.records.filter(x=>x.checkin).map(x=>({sessionName:x.session,name:x.name,unit:x.unit,role:x.role,idno:x.idno,checkin:x.checkin,checkout:x.checkout,sigUrl:x.sigUrl}));
+      }
+    }catch(e){
+      document.getElementById('loading-overlay').classList.remove('show');
+      console.warn('雲端讀取失敗，改用本機資料',e);
+    }
+  }
   const labels=sessionLabels();
+  return records().filter(r=>r.checkin).map(r=>({sessionName:labels[r.session]||['北部場次','南部場次'][r.session],name:r.name,unit:r.unit,role:r.role,idno:r.idno,checkin:r.checkin,checkout:r.checkout,sigUrl:r.sigUrl}));
+}
+
+async function exportCsv(type){
+  const recs=await getExportRecords();
   const ev=getEventInfo();
-  const sessName=i=>labels[i]||['北部場次','南部場次'][i]||i;
   const csvRow=arr=>arr.map(v=>{const s=String(v==null?'':v);return /[,\"\n]/.test(s)?'\"'+s.replace(/\"/g,'\"\"')+'\"':s;}).join(',');
   let rows,fname;
 
@@ -789,7 +838,7 @@ function exportCsv(type){
       csvRow(['繼續教育時數',ev.hours]),
       '',
       csvRow(['場次','姓名','服務單位','身份類別','身份證字號','簽到時間','簽退時間','電子簽名連結']),
-      ...recs.map(r=>csvRow([sessName(r.session),r.name,r.unit||'',r.role||'',r.idno||'',r.checkin||'',r.checkout||'',r.sigUrl||'']))
+      ...recs.map(r=>csvRow([r.sessionName,r.name,r.unit||'',r.role||'',r.idno||'',r.checkin||'',r.checkout||'',r.sigUrl||'']))
     ];
     fname='ICOPE繼續教育積分簽到表.csv';
   } else {
@@ -799,7 +848,7 @@ function exportCsv(type){
       csvRow(['南部場','日期：'+ev.date1,'地點：'+ev.loc1]),
       '',
       csvRow(['序號','場次','姓名','服務單位','活動時間','電子簽名連結']),
-      ...recs.map((r,i)=>csvRow([i+1,sessName(r.session),r.name,r.unit||'','13:30-17:30',r.sigUrl||'']))
+      ...recs.map((r,i)=>csvRow([i+1,r.sessionName,r.name,r.unit||'','13:30-17:30',r.sigUrl||'']))
     ];
     fname='ICOPE核銷簽到表.csv';
   }
