@@ -735,11 +735,68 @@ function exportCsv(type){
 }
 
 // ═══════════════════════════════════════════════
+//  簽到驗證碼 & 截止時間
+// ═══════════════════════════════════════════════
+function ciCodes(){return ls('icope_ci_codes',[null,null]);}
+function saveCiCodes(c){lsSave('icope_ci_codes',c);}
+function ciTimes(){return ls('icope_ci_times',[null,null]);}
+function saveCiTimes(t){lsSave('icope_ci_times',t);}
+
+function genCiCode(){
+  const sess=parseInt(document.querySelector('input[name="adm-ci-vc-sess"]:checked').value);
+  const code=String(Math.floor(1000+Math.random()*9000));
+  const c=ciCodes();c[sess]=code;saveCiCodes(c);
+  updateCiCodeUI();
+}
+function clearCiCode(){
+  const sess=parseInt(document.querySelector('input[name="adm-ci-vc-sess"]:checked').value);
+  const c=ciCodes();c[sess]=null;saveCiCodes(c);
+  updateCiCodeUI();
+}
+function updateCiCodeUI(){
+  const c=ciCodes()[0];
+  const disp=document.getElementById('adm-ci-code-display');
+  const stat=document.getElementById('adm-ci-code-status');
+  if(disp) disp.textContent=c?String(c):'---';
+  if(stat) stat.textContent=c?'驗證碼啟用中，學員須輸入才能簽到':'未設定（無需驗證碼）';
+  const grp=document.getElementById('ci-code-group');
+  const lbl=document.getElementById('sig-label');
+  if(grp) grp.style.display=c?'block':'none';
+  if(lbl) lbl.textContent=c?'⑥ 電子簽名':'⑤ 電子簽名';
+}
+function saveCiTime(){
+  const sess=parseInt(document.querySelector('input[name="adm-ci-sess"]:checked').value);
+  const t=document.getElementById('adm-ci-time').value;
+  const ct=ciTimes();ct[sess]=t||null;saveCiTimes(ct);
+  updateCiTimeUI();alert('已儲存');
+}
+function clearCiTime(){
+  const sess=parseInt(document.querySelector('input[name="adm-ci-sess"]:checked').value);
+  const ct=ciTimes();ct[sess]=null;saveCiTimes(ct);
+  document.getElementById('adm-ci-time').value='';
+  updateCiTimeUI();
+}
+function updateCiTimeUI(){
+  const t=ciTimes()[0];
+  const el=document.getElementById('adm-ci-status');
+  if(el) el.textContent=t?'目前設定：'+t+' 截止簽到':'目前設定：隨時可簽到';
+}
+function isCiOpen(){
+  const t=ciTimes()[ciSession];
+  if(!t) return true;
+  const now=new Date();
+  const[h,m]=t.split(':').map(Number);
+  const deadline=new Date();deadline.setHours(h,m,0,0);
+  return now<=deadline;
+}
+
+// ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('load',()=>{
   initSig();
   updateCiCodeUI();
+  updateCiTimeUI();
   updateCoLockUI();
   checkApiWarn();
 });
