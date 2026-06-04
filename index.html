@@ -18,7 +18,7 @@
   .header h1{font-size:17px;font-weight:700;}
   .header p{font-size:11px;opacity:0.8;margin-top:2px;}
   .tab-bar{display:flex;background:white;border-bottom:2px solid var(--border);overflow-x:auto;}
-  .tab-btn{flex:1;min-width:72px;padding:13px 6px;border:none;background:none;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:500;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s;white-space:nowrap;}
+  .tab-btn{flex:1;min-width:72px;padding:16px 8px;border:none;background:none;font-family:'Noto Sans TC',sans-serif;font-size:15px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s;white-space:nowrap;}
   .tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);}
   .page{display:none;padding:18px 14px 40px;max-width:560px;margin:0 auto;}
   .page.active{display:block;}
@@ -153,8 +153,13 @@
       <input type="text" id="ci-idno" placeholder="A123456789" maxlength="10" style="text-transform:uppercase">
     </div>
 
+    <div class="form-group" id="ci-code-group" style="display:none;">
+      <label>⑤ 驗證碼（工作人員提供）</label>
+      <input type="text" id="ci-verify-code" placeholder="請輸入今日驗證碼" maxlength="6" style="letter-spacing:4px;text-align:center;font-size:18px;font-weight:700;">
+    </div>
+
     <div class="form-group">
-      <label>⑤ 電子簽名</label>
+      <label id="sig-label">⑤ 電子簽名</label>
       <div class="sig-wrap" id="ci-sig-wrap">
         <canvas id="sigCanvas"></canvas>
         <div class="sig-hint" id="sigHint">請在此處簽名</div>
@@ -225,7 +230,48 @@
   </div>
 
   <div class="card">
-    <div class="card-title">簽退設定</div>
+    <div class="card-title">⏰ 簽到設定</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
+      設定簽到截止時間：超過時間後學員無法再簽到（留空 = 隨時可簽到）
+    </p>
+    <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
+      <label><input type="radio" name="adm-ci-sess" value="0" checked> 北部場</label>
+      <label><input type="radio" name="adm-ci-sess" value="1"> 南部場</label>
+    </div>
+    <div class="form-group">
+      <label>簽到截止時間（留空＝隨時可簽到）</label>
+      <input type="time" id="adm-ci-time">
+    </div>
+    <div class="row">
+      <button class="btn btn-sm btn-primary" onclick="saveCiTime()">儲存</button>
+      <button class="btn btn-sm btn-secondary" onclick="clearCiTime()">清除</button>
+    </div>
+    <p id="adm-ci-status" style="font-size:12px;color:var(--gray);margin-top:8px;"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔑 簽到驗證碼</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
+      用途：防止未到場人員代簽。現場工作人員告知驗證碼，學員輸入後才能完成簽到。<br>
+      <strong>停用</strong> = 不需要驗證碼，直接簽到。
+    </p>
+    <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
+      <label><input type="radio" name="adm-ci-vc-sess" value="0" checked> 北部場</label>
+      <label><input type="radio" name="adm-ci-vc-sess" value="1"> 南部場</label>
+    </div>
+    <p id="adm-ci-code-display" style="font-size:24px;font-weight:700;color:var(--teal);margin-bottom:8px;letter-spacing:4px;"></p>
+    <p id="adm-ci-code-status" style="font-size:12px;color:var(--gray);margin-bottom:10px;"></p>
+    <div class="row">
+      <button class="btn btn-sm btn-primary" onclick="genCiCode()">產生驗證碼</button>
+      <button class="btn btn-sm btn-danger" onclick="clearCiCode()">停用</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⏰ 簽退設定</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
+      設定簽退開放時間：<strong>到了這個時間後</strong>學員才能簽退（例如設 16:00，防止提早離場）。留空 = 隨時可簽退。
+    </p>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-sess" value="0" checked> 北部場</label>
       <label><input type="radio" name="adm-sess" value="1"> 南部場</label>
@@ -242,7 +288,11 @@
   </div>
 
   <div class="card">
-    <div class="card-title">簽退驗證碼</div>
+    <div class="card-title">🔑 簽退驗證碼</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
+      用途：防止未到場人員遠端代簽退。活動結束時管理員唸出驗證碼，在場者輸入後完成簽退。<br>
+      <strong>停用</strong> = 不需要驗證碼，直接簽退。
+    </p>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-vc-sess" value="0" checked> 北部場</label>
       <label><input type="radio" name="adm-vc-sess" value="1"> 南部場</label>
@@ -487,8 +537,12 @@ async function submitCheckin(){
   const name=document.getElementById('ci-name').value.trim();
   if(!name){showAlert('ci-alert','error','請輸入姓名');return;}
 
+  if(!isCiOpen()){showAlert('ci-alert','error','簽到時間已截止，請聯繫工作人員');return;}
   const list=getCurrentList();
   if(!list.includes(name)){showAlert('ci-alert','error','查無報名資料，請聯繫工作人員');return;}
+  const ciCodeVal=document.getElementById('ci-verify-code');
+  const ciCodeReq=ciCodes()[ciSession];
+  if(ciCodeReq&&(!ciCodeVal||ciCodeVal.value.trim()!==String(ciCodeReq))){showAlert('ci-alert','error','驗證碼錯誤，請向工作人員確認');return;}
 
   const sig=getSigData();
   if(!sig){showAlert('ci-alert','error','請完成電子簽名');return;}
@@ -566,6 +620,8 @@ async function submitCheckout(){
 //  ADMIN
 // ═══════════════════════════════════════════════
 function refreshAdmin(){
+  updateCiCodeUI();
+  updateCiTimeUI();
   const labels=sessionLabels();
   document.getElementById('adm-s0-label').value=labels[0]||'';
   document.getElementById('adm-s1-label').value=labels[1]||'';
@@ -683,6 +739,7 @@ function exportCsv(type){
 // ═══════════════════════════════════════════════
 window.addEventListener('load',()=>{
   initSig();
+  updateCiCodeUI();
   updateCoLockUI();
   checkApiWarn();
 });
