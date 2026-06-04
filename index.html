@@ -380,6 +380,16 @@
       <button class="btn btn-sm btn-secondary" onclick="exportCsv('credit')">📥 積分簽到表</button>
       <button class="btn btn-sm btn-secondary" onclick="exportCsv('school')">📥 核銷簽到表</button>
     </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
+      <div style="font-size:12px;font-weight:600;color:var(--gray);margin-bottom:6px;">📄 產生列印用簽到表（含簽名圖）</div>
+      <button class="btn btn-sm btn-primary" onclick="buildPrintSheet()" style="background:var(--gold);width:100%;margin-bottom:6px;">⭐ 自動（依今日日期判斷場次）</button>
+      <div class="row">
+        <button class="btn btn-sm btn-secondary" onclick="buildPrintSheet('north')" style="flex:1;">🔵 北部場</button>
+        <button class="btn btn-sm btn-secondary" onclick="buildPrintSheet('south')" style="flex:1;">🔴 南部場</button>
+      </div>
+      <p style="font-size:11px;color:var(--gray);margin-top:6px;">產生後，到 Google Sheet「列印簽到表」分頁 → 檔案 → 下載 → PDF</p>
+      <div id="print-status" style="font-size:12px;margin-top:6px;color:var(--teal);"></div>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">簽到紀錄</div>
@@ -774,6 +784,30 @@ function changePw(){
   lsSave('icope_pw',p1);
   al.className='alert success show';al.textContent='密碼已更新';
   document.getElementById('adm-pw1').value='';document.getElementById('adm-pw2').value='';
+}
+
+async function buildPrintSheet(printSession){
+  const apiUrl=getApiUrl();
+  const status=document.getElementById('print-status');
+  if(!apiUrl){status.textContent='❌ 尚未設定 API 網址';return;}
+  const label=printSession==='north'?'北部場':printSession==='south'?'南部場':'今日場次';
+  status.textContent='產生「'+label+'」中，請稍候…';
+  document.getElementById('loading-overlay').classList.add('show');
+  try{
+    const body={action:'buildPrint'};
+    if(printSession) body.printSession=printSession;
+    const r=await fetch(apiUrl,{method:'POST',body:JSON.stringify(body)});
+    const j=await r.json();
+    document.getElementById('loading-overlay').classList.remove('show');
+    if(j.success){
+      status.innerHTML='✅ 已產生「'+label+'」（'+(j.count||0)+' 筆）！請到 Google Sheet「列印簽到表」分頁下載 PDF';
+    }else{
+      status.textContent='⚠️ 產生失敗：'+(j.error||'未知錯誤');
+    }
+  }catch(e){
+    document.getElementById('loading-overlay').classList.remove('show');
+    status.textContent='⚠️ 連線失敗：'+e.message;
+  }
 }
 
 async function clearTestData(){
