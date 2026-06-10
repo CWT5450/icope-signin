@@ -658,20 +658,41 @@ async function submitCheckin(){
   else{recs.push(newRec);}
   saveRecords(recs);
 
-  // 雲端上傳，捕捉簽名 Drive URL
+  // 雲端上傳，捕捉簽名 Drive URL（失敗自動重試，最多5次）
   const apiUrl=getApiUrl();
+  let cloudFailed=false;
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
-    try{
-      const resp=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,venueFull:VENUE_FULL[ciSession]})});
-      const json=await resp.json();
-      if(json.sigUrl){
-        const recs2=records();
-        const target=recs2.find(r=>r.id===newRec.id||(r.session===ciSession&&r.name===name));
-        if(target){target.sigUrl=json.sigUrl;saveRecords(recs2);}
+    const payload=JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,venueFull:VENUE_FULL[ciSession]});
+    let uploaded=false;
+    for(let attempt=1;attempt<=5 && !uploaded;attempt++){
+      try{
+        const resp=await fetch(apiUrl,{method:'POST',body:payload});
+        const json=await resp.json();
+        uploaded=true;
+        if(json.sigUrl){
+          const recs2=records();
+          const target=recs2.find(r=>r.id===newRec.id||(r.session===ciSession&&r.name===name));
+          if(target){target.sigUrl=json.sigUrl;target.synced=true;saveRecords(recs2);}
+        }
+      }catch(e){
+        console.warn('雲端上傳第'+attempt+'次失敗',e);
+        if(attempt<5) await new Promise(r=>setTimeout(r,1000*attempt));
       }
-    }catch(e){console.warn('雲端上傳失敗，資料已存本機',e);}
+    }
     document.getElementById('loading-overlay').classList.remove('show');
+    if(!uploaded){
+      cloudFailed=true;
+      const recs3=records();
+      const t3=recs3.find(r=>r.id===newRec.id||(r.session===ciSession&&r.name===name));
+      if(t3){t3.synced=false;saveRecords(recs3);}
+    }
+  }
+
+  // 誠實回報：雲端失敗就「不算簽到成功」，請學員重試或找工作人員
+  if(cloudFailed){
+    showAlert('ci-alert','error','⚠️ 網路忙線，簽到尚未送出！請按「確認簽到」再試一次，或請工作人員協助（請勿關閉本頁）');
+    return; // 保留已填資料與簽名，方便直接重按
   }
 
   showAlert('ci-alert','success','✅ 簽到完成！感謝您的參與');
