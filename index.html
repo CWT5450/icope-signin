@@ -377,8 +377,6 @@
     </div>
     <div class="row">
       <button class="btn btn-sm btn-primary" onclick="refreshRecords()">🔄 更新</button>
-      <button class="btn btn-sm btn-secondary" onclick="exportCsv('credit')">📥 積分簽到表</button>
-      <button class="btn btn-sm btn-secondary" onclick="exportCsv('school')">📥 核銷簽到表</button>
     </div>
     <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
       <div style="font-size:12px;font-weight:600;color:var(--gray);margin-bottom:6px;">📄 產生列印用簽到表（含簽名圖）</div>
@@ -890,7 +888,7 @@ function refreshRecords(){
   </tr>`).join('');
 }
 
-function getEventInfo(){return ls('icope_event_info',{name:'115年長者內在能力檢測(ICOPE)服務人員教育訓練－「從ICOPE到社會處方箋」教育訓練',date0:'115年6月16日（二）13:30-16:30',loc0:'',date1:'115年6月30日（二）13:30-16:30',loc1:'',hours:'3小時'});}
+function getEventInfo(){return ls('icope_event_info',{name:'115年長者內在能力檢測(ICOPE)服務人員教育訓練－「從ICOPE到社會處方箋」教育訓練',date0:'115年6月16日（二）13:30-16:30',loc0:'TCCC台灣文創訓練中心(1館) 752、753會議室（台北市中山區松江路131號7樓之1）',date1:'115年6月30日（二）13:30-16:30',loc1:'長庚科技大學嘉義校區 百人階梯教室（嘉義縣朴子市嘉朴路西段2號）',hours:'3小時'});}
 function saveEventInfo(){
   lsSave('icope_event_info',{
     name: document.getElementById('adm-event-name').value.trim(),
