@@ -285,8 +285,8 @@
   <div class="card">
     <div class="card-title">簽退設定</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
-      <label><input type="radio" name="adm-sess" value="0" checked> 北部場</label>
-      <label><input type="radio" name="adm-sess" value="1"> 南部場</label>
+      <label><input type="radio" name="adm-sess" value="0" checked onchange="loadCoTimeInput()"> 北部場</label>
+      <label><input type="radio" name="adm-sess" value="1" onchange="loadCoTimeInput()"> 南部場</label>
     </div>
     <div class="form-group">
       <label>開放簽退時間（留空＝隨時可退）</label>
@@ -751,9 +751,14 @@ function refreshAdmin(){
   document.getElementById('adm-s0-label').value=labels[0]||'';
   document.getElementById('adm-s1-label').value=labels[1]||'';
   document.getElementById('adm-api-url').value=getApiUrl();
-  updateAdmCoStatus();
+  loadCoTimeInput();
   updateAdmCodeStatus();
   updateAdmCiStatus();
+}
+function loadCoTimeInput(){
+  const sess=getAdmSess('adm-sess');
+  document.getElementById('adm-co-time').value=coTimes()[sess]||'';
+  updateAdmCoStatus();
 }
 function saveSessionLabels(){
   lsSave('icope_sess_labels',[document.getElementById('adm-s0-label').value.trim(),document.getElementById('adm-s1-label').value.trim()]);
@@ -807,8 +812,9 @@ function updateAdmCiStatus(){
   document.getElementById('adm-ci-status').textContent=parts.join('　');
 }
 function updateAdmCoStatus(){
-  const t=coTimes()[0];
-  document.getElementById('adm-co-status').textContent=t?`目前設定：${t} 後開放`:'目前設定：隨時可簽退';
+  const sess=getAdmSess('adm-sess');
+  const t=coTimes()[sess];
+  document.getElementById('adm-co-status').textContent=t?`目前設定：${t} 後開放（${['北部場','南部場'][sess]}）`:'目前設定：隨時可簽退';
 }
 function saveCoTime(){
   const sess=getAdmSess('adm-sess');
