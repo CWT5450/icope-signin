@@ -136,13 +136,14 @@
   </div>
 
   <div id="ci-content">
-  <div class="card">
+  <div class="card" id="ci-sess-card">
     <div class="card-title">選擇場次</div>
-    <div class="sess-btns">
+    <div class="sess-btns" id="ci-sess-btns">
       <button class="sess-btn selected" id="ci-s0" onclick="selectCiSession(0)">🔵 北部場次</button>
       <button class="sess-btn" id="ci-s1" onclick="selectCiSession(1)">🔴 南部場次</button>
     </div>
     <div id="ci-session-badge" style="font-size:11px;color:var(--gray);margin-top:4px;">北部場次</div>
+    <div id="ci-auto-sess-badge" style="display:none;font-size:14px;font-weight:700;color:var(--teal);padding:6px 0;"></div>
   </div>
 
   <div class="card">
@@ -200,12 +201,13 @@
 
 <!-- ══ 簽退頁 ══ -->
 <div id="page-checkout" class="page">
-  <div class="card">
+  <div class="card" id="co-sess-card">
     <div class="card-title">選擇場次</div>
-    <div class="sess-btns">
+    <div class="sess-btns" id="co-sess-btns">
       <button class="sess-btn selected" id="co-s0" onclick="selectCoSession(0)">🔵 北部場次</button>
       <button class="sess-btn" id="co-s1" onclick="selectCoSession(1)">🔴 南部場次</button>
     </div>
+    <div id="co-auto-sess-badge" style="display:none;font-size:14px;font-weight:700;color:var(--teal);padding:6px 0;"></div>
   </div>
 
   <div id="co-survey-card" style="background:linear-gradient(135deg,#fff3e0,#fff8e1);border:2.5px solid #f57c00;border-radius:16px;padding:20px 16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(245,124,0,0.18);">
@@ -597,7 +599,7 @@ function initSig(){
   sigCanvas=document.getElementById('sigCanvas');
   sigCtx=sigCanvas.getContext('2d');
   const wrap=document.getElementById('ci-sig-wrap');
-  const dpr=window.devicePixelRatio||1;
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
   sigCanvas.width=wrap.clientWidth*dpr;
   sigCanvas.height=130*dpr;
   sigCtx.scale(dpr,dpr);
@@ -615,7 +617,7 @@ function initSig(){
 }
 function updateSigHint(){document.getElementById('sigHint').style.opacity=sigHasMark?'0':'1';}
 function clearSig(){if(sigCtx)sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);sigHasMark=false;updateSigHint();}
-function getSigData(){return sigHasMark?sigCanvas.toDataURL('image/png'):null;}
+function getSigData(){return sigHasMark?sigCanvas.toDataURL('image/jpeg',0.7):null;}
 
 // ═══════════════════════════════════════════════
 //  CHECKIN SUBMIT
@@ -983,12 +985,40 @@ function exportCsv(type){
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
+// 依日期自動判斷場次：6/16=北部(0)，6/30=南部(1)，其他=null
+function autoDetectSessionByDate(){
+  const d=new Date();
+  const m=d.getMonth()+1, day=d.getDate();
+  if(m===6&&day===16) return 0;
+  if(m===6&&day===30) return 1;
+  return null;
+}
+
+function applyAutoSession(idx){
+  const labels=['🔵 北部場次','🔴 南部場次'];
+  // 簽到頁
+  selectCiSession(idx);
+  document.getElementById('ci-sess-btns').style.display='none';
+  document.getElementById('ci-session-badge').style.display='none';
+  const ciBadge=document.getElementById('ci-auto-sess-badge');
+  ciBadge.textContent='📅 今日場次：'+labels[idx]+'（已自動選取）';
+  ciBadge.style.display='block';
+  // 簽退頁
+  selectCoSession(idx);
+  document.getElementById('co-sess-btns').style.display='none';
+  const coBadge=document.getElementById('co-auto-sess-badge');
+  coBadge.textContent='📅 今日場次：'+labels[idx]+'（已自動選取）';
+  coBadge.style.display='block';
+}
+
 window.addEventListener('load', async ()=>{
   initSig();
   updateCoLockUI();
   updateCiLockUI();
   checkApiWarn();
   await loadNameList();
+  const autoIdx=autoDetectSessionByDate();
+  if(autoIdx!==null) applyAutoSession(autoIdx);
 });
 </script>
 </body>
