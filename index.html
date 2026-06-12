@@ -268,20 +268,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">場次說明</div>
-    <div class="form-group">
-      <label>北部場次名稱</label>
-      <input type="text" id="adm-s0-label" placeholder="北部場次">
-    </div>
-    <div class="form-group">
-      <label>南部場次名稱</label>
-      <input type="text" id="adm-s1-label" placeholder="南部場次">
-    </div>
-    <button class="btn btn-sm btn-primary" onclick="saveSessionLabels()">儲存</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">報到截止設定</div>
+    <div class="card-title" style="color:#1a2a28;font-size:16px;font-weight:800;">報到截止設定</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-ci-sess" value="0" checked> 北部場</label>
       <label><input type="radio" name="adm-ci-sess" value="1"> 南部場</label>
@@ -294,7 +281,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">簽退設定</div>
+    <div class="card-title" style="color:#1a2a28;font-size:16px;font-weight:800;">簽退設定</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-sess" value="0" checked> 北部場</label>
       <label><input type="radio" name="adm-sess" value="1"> 南部場</label>
@@ -311,7 +298,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">簽退驗證碼</div>
+    <div class="card-title" style="color:#1a2a28;font-size:16px;font-weight:800;">簽退驗證碼</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-vc-sess" value="0" checked> 北部場</label>
       <label><input type="radio" name="adm-vc-sess" value="1"> 南部場</label>
@@ -325,7 +312,20 @@
   </div>
 
   <div class="card">
-    <div class="card-title">更改管理員密碼</div>
+    <div class="card-title" style="color:#1a2a28;font-size:16px;font-weight:800;">場次說明</div>
+    <div class="form-group">
+      <label>北部場次名稱</label>
+      <input type="text" id="adm-s0-label" placeholder="北部場次">
+    </div>
+    <div class="form-group">
+      <label>南部場次名稱</label>
+      <input type="text" id="adm-s1-label" placeholder="南部場次">
+    </div>
+    <button class="btn btn-sm btn-primary" onclick="saveSessionLabels()">儲存</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="color:#1a2a28;font-size:16px;font-weight:800;">更改管理員密碼</div>
     <div class="form-group">
       <label>新密碼</label>
       <input type="password" id="adm-pw1">
