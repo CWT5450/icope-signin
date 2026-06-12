@@ -125,7 +125,6 @@
         <div class="name-dropdown" id="name-dropdown"></div>
       </div>
       <div class="name-status" id="name-status"></div>
-      <button type="button" id="ci-onsite-btn" onclick="enableOnsite()" style="display:none;margin-top:8px;width:100%;background:#fff3e0;color:#e65100;border:1.5px solid #ffb74d;" class="btn btn-sm">✚ 我是現場報名（非預先報名者）</button>
     </div>
 
     <div class="form-group">
@@ -154,13 +153,8 @@
       <input type="text" id="ci-idno" placeholder="A123456789" maxlength="10" style="text-transform:uppercase">
     </div>
 
-    <div class="form-group" id="ci-code-group" style="display:none;">
-      <label>⑤ 驗證碼（工作人員提供）</label>
-      <input type="text" id="ci-verify-code" placeholder="請輸入今日驗證碼" maxlength="6" style="letter-spacing:4px;text-align:center;font-size:18px;font-weight:700;">
-    </div>
-
     <div class="form-group">
-      <label id="sig-label">⑤ 電子簽名</label>
+      <label>⑤ 電子簽名</label>
       <div class="sig-wrap" id="ci-sig-wrap">
         <canvas id="sigCanvas"></canvas>
         <div class="sig-hint" id="sigHint">請在此處簽名</div>
@@ -183,13 +177,56 @@
     </div>
   </div>
 
+  <div id="co-survey-card" style="background:linear-gradient(135deg,#fff3e0,#fff8e1);border:2.5px solid #f57c00;border-radius:16px;padding:20px 16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(245,124,0,0.18);">
+    <!-- 標題列 -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <div style="width:36px;height:36px;background:#f57c00;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📋</div>
+      <div>
+        <div style="font-size:15px;font-weight:800;color:#e65100;letter-spacing:0.5px;">Step 1：填寫回饋問卷</div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:#f9a825;opacity:0.4;margin:12px 0;"></div>
+
+    <p style="font-size:16px;font-weight:700;color:#6d4c41;margin-bottom:14px;line-height:1.6;text-align:center;">
+      簽退前請先完成回饋問卷，感謝您的寶貴意見！
+    </p>
+
+    <!-- 問卷按鈕 -->
+    <a href="https://forms.gle/ZecEYR2b2xVvM174A" target="_blank"
+       style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;
+              background:linear-gradient(135deg,#f57c00,#e65100);color:white;
+              border-radius:12px;padding:16px;font-size:16px;font-weight:700;
+              box-shadow:0 4px 12px rgba(230,81,0,0.35);letter-spacing:0.5px;"
+       onclick="onSurveyOpen()">
+      <span style="font-size:22px;">📝</span>
+      <span>前往填寫回饋問卷</span>
+      <span style="font-size:18px;">→</span>
+    </a>
+
+    <!-- 確認勾選區 -->
+    <div id="co-survey-confirm" style="display:none;margin-top:14px;">
+      <label onclick="toggleSurveyDone()"
+             style="display:flex;align-items:center;gap:12px;padding:14px 16px;
+                    background:white;border:2px solid #f57c00;border-radius:12px;cursor:pointer;
+                    transition:all 0.2s;">
+        <div id="co-survey-check-box"
+             style="width:32px;height:32px;border-radius:8px;border:2.5px solid #ccc;
+                    background:white;display:flex;align-items:center;justify-content:center;
+                    font-size:22px;flex-shrink:0;transition:all 0.2s;"></div>
+        <input type="checkbox" id="co-survey-done" onchange="updateCoSubmitBtn()" style="display:none;">
+        <span id="co-survey-label" style="font-size:15px;font-weight:700;color:#c0392b;">我已完成回饋問卷填寫</span>
+      </label>
+    </div>
+  </div>
+
   <div class="card">
     <div id="co-locked" style="display:none;text-align:center;padding:20px;color:var(--gray);">
       <div style="font-size:36px;margin-bottom:8px;">🔒</div>
       <div style="font-size:14px;">簽退尚未開放<br>請依活動安排時間再行簽退</div>
     </div>
     <div id="co-form">
-      <div class="card-title">簽退</div>
+      <div class="card-title">Step 2：確認簽退</div>
       <div class="form-group">
         <label>您的姓名</label>
         <input type="text" id="co-name" placeholder="請輸入姓名">
@@ -199,7 +236,8 @@
         <input type="text" id="co-code" placeholder="請輸入驗證碼">
       </div>
       <div id="co-alert" class="alert"></div>
-      <button class="btn btn-primary" onclick="submitCheckout()">🚪 確認簽退</button>
+      <button class="btn btn-primary" id="co-submit-btn" onclick="submitCheckout()" disabled
+        style="opacity:0.5;" title="請先完成回饋問卷">🚪 確認簽退</button>
     </div>
   </div>
 </div>
@@ -231,77 +269,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">📋 活動資訊（顯示在簽到表表頭）</div>
-    <div class="form-group">
-      <label>活動名稱</label>
-      <input type="text" id="adm-event-name" placeholder="115年ICOPE教育訓練工作坊">
-    </div>
-    <div class="form-group">
-      <label>北部場日期</label>
-      <input type="text" id="adm-event-date0" placeholder="115年6月16日（週二）">
-    </div>
-    <div class="form-group">
-      <label>北部場地點</label>
-      <input type="text" id="adm-event-loc0" placeholder="台北市中山區松江路131號7樓">
-    </div>
-    <div class="form-group">
-      <label>南部場日期</label>
-      <input type="text" id="adm-event-date1" placeholder="115年6月30日（週二）">
-    </div>
-    <div class="form-group">
-      <label>南部場地點</label>
-      <input type="text" id="adm-event-loc1" placeholder="嘉義縣朴子市嘉朴路西段2號">
-    </div>
-    <div class="form-group">
-      <label>繼續教育時數（積分用）</label>
-      <input type="text" id="adm-event-hours" placeholder="6小時">
-    </div>
-    <button class="btn btn-sm btn-primary" onclick="saveEventInfo()">儲存</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">⏰ 簽到設定</div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
-      設定簽到截止時間：超過時間後學員無法再簽到（留空 = 隨時可簽到）
-    </p>
-    <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
-      <label><input type="radio" name="adm-ci-sess" value="0" checked> 北部場</label>
-      <label><input type="radio" name="adm-ci-sess" value="1"> 南部場</label>
-    </div>
-    <div class="form-group">
-      <label>簽到截止時間（留空＝隨時可簽到）</label>
-      <input type="time" id="adm-ci-time">
-    </div>
-    <div class="row">
-      <button class="btn btn-sm btn-primary" onclick="saveCiTime()">儲存</button>
-      <button class="btn btn-sm btn-secondary" onclick="clearCiTime()">清除</button>
-    </div>
-    <p id="adm-ci-status" style="font-size:12px;color:var(--gray);margin-top:8px;"></p>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🔑 簽到驗證碼</div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
-      用途：防止未到場人員代簽。現場工作人員告知驗證碼，學員輸入後才能完成簽到。<br>
-      <strong>停用</strong> = 不需要驗證碼，直接簽到。
-    </p>
-    <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
-      <label><input type="radio" name="adm-ci-vc-sess" value="0" checked> 北部場</label>
-      <label><input type="radio" name="adm-ci-vc-sess" value="1"> 南部場</label>
-    </div>
-    <p id="adm-ci-code-display" style="font-size:24px;font-weight:700;color:var(--teal);margin-bottom:8px;letter-spacing:4px;"></p>
-    <p id="adm-ci-code-status" style="font-size:12px;color:var(--gray);margin-bottom:10px;"></p>
-    <div class="row">
-      <button class="btn btn-sm btn-primary" onclick="genCiCode()">產生驗證碼</button>
-      <button class="btn btn-sm btn-danger" onclick="clearCiCode()">停用</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">⏰ 簽退設定</div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
-      設定簽退開放時間：<strong>到了這個時間後</strong>學員才能簽退（例如設 16:00，防止提早離場）。留空 = 隨時可簽退。
-    </p>
+    <div class="card-title">簽退設定</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-sess" value="0" checked> 北部場</label>
       <label><input type="radio" name="adm-sess" value="1"> 南部場</label>
@@ -318,11 +286,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">🔑 簽退驗證碼</div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#f0f6f5;padding:8px 10px;border-radius:8px;">
-      用途：防止未到場人員遠端代簽退。活動結束時管理員唸出驗證碼，在場者輸入後完成簽退。<br>
-      <strong>停用</strong> = 不需要驗證碼，直接簽退。
-    </p>
+    <div class="card-title">簽退驗證碼</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-vc-sess" value="0" checked> 北部場</label>
       <label><input type="radio" name="adm-vc-sess" value="1"> 南部場</label>
@@ -348,17 +312,6 @@
     <button class="btn btn-sm btn-secondary" onclick="changePw()">更改密碼</button>
     <div id="adm-pw-alert" class="alert" style="margin-top:8px;"></div>
   </div>
-
-  <div class="card" style="border:1.5px solid #ffcdd2;background:#fff5f5;">
-    <div class="card-title" style="color:#c0392b;">🗑️ 清除測試資料</div>
-    <p style="font-size:12px;color:var(--gray);margin-bottom:10px;background:#fff;padding:8px 10px;border-radius:8px;">
-      清除<strong>所有簽到紀錄</strong>（本機 + 雲端「簽到紀錄」分頁），用於正式活動前清掉測試資料。<br>
-      ⚠️ 不會刪除證書版的報名資料，但若測試時有用過「現場報名」，請自行到證書版手動刪除測試列。<br>
-      <strong style="color:#c0392b;">此動作無法復原！</strong>
-    </p>
-    <button class="btn btn-sm btn-danger" onclick="clearTestData()">🗑️ 清除所有簽到測試資料</button>
-    <div id="adm-clear-status" style="font-size:12px;margin-top:8px;color:var(--gray);"></div>
-  </div>
 </div>
 
 <!-- ══ 紀錄頁 ══ -->
@@ -377,16 +330,8 @@
     </div>
     <div class="row">
       <button class="btn btn-sm btn-primary" onclick="refreshRecords()">🔄 更新</button>
-    </div>
-    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
-      <div style="font-size:12px;font-weight:600;color:var(--gray);margin-bottom:6px;">📄 產生列印用簽到表（含簽名圖）</div>
-      <button class="btn btn-sm btn-primary" onclick="buildPrintSheet()" style="background:var(--gold);width:100%;margin-bottom:6px;">⭐ 自動（依今日日期判斷場次）</button>
-      <div class="row">
-        <button class="btn btn-sm btn-secondary" onclick="buildPrintSheet('north')" style="flex:1;">🔵 北部場</button>
-        <button class="btn btn-sm btn-secondary" onclick="buildPrintSheet('south')" style="flex:1;">🔴 南部場</button>
-      </div>
-      <p style="font-size:11px;color:var(--gray);margin-top:6px;">產生後，到 Google Sheet「列印簽到表」分頁 → 檔案 → 下載 → PDF</p>
-      <div id="print-status" style="font-size:12px;margin-top:6px;color:var(--teal);"></div>
+      <button class="btn btn-sm btn-secondary" onclick="exportCsv('credit')">📥 積分簽到表</button>
+      <button class="btn btn-sm btn-secondary" onclick="exportCsv('school')">📥 核銷簽到表</button>
     </div>
   </div>
   <div class="card">
@@ -418,18 +363,13 @@
 // ═══════════════════════════════════════════════
 //  預載名單（來自 Google Sheets 證書版）
 // ═══════════════════════════════════════════════
-let PRELOADED_NORTH = ["邱沛妮", "羅秀珍", "張禎倪", "陳思汝", "楊筱棻", "張依文", "蔡筠臻", "陳建儒", "鄭嘉鈞", "吳柏翰", "姜淑梅", "唐文玲", "曾意喬", "黃秀芝", "黃律淇", "廖冠涵", "張子寧", "周心緹", "曾詒旋", "蔡宜真", "蘇婉真", "李季紋", "李淑玫", "葉祐瑄", "陳國翠", "林佩珍", "沈宥瑀", "曾琇鈺", "簡蓓心", "傅蘭美", "陳姳蓁", "趙莉芬", "林慧萍", "黃莉媛", "倪麗芬", "林文婕", "許碧芬", "陳偉婷", "吳思霖", "黃翠媛", "林偉民", "侯嘉玲", "蔡靚瑜", "鄭嘉鈞", "蕭冰如", "戴忻萱"];
-let PRELOADED_SOUTH = ["李宛玲", "凃君瑾", "顏效禹", "蔡旻珊", "柯宜妮", "洪珮芳", "鄭可馨", "張憶美", "蘇文婷", "陳怡君", "葉修妙", "張美娟", "江宜芳", "葉芳妏", "陳慧君", "徐苡絜", "邱毓亭", "林姵辰", "曾如君", "鄭筑云", "陳月嬌", "萬佳玲", "丁怡心", "蘇秋菊", "吳素慎", "邱雅甜", "梁耀予", "蔡靜芬", "謝心嵐", "張秀寬", "饒慧雯", "林美慧", "張倖甄", "吳庭禎", "許玉瓊", "王筱婷", "楊靜如", "劉彥芝", "廖怡婷", "劉彥芝", "謝怡萱", "王已甄", "廖書岑", "楊佳蓁", "楊欣恬", "陳席珍", "蔡惠雅", "許純夢", "林柳足", "楊惠如", "楊千毅", "林梅芳", "羅冠麟", "傅瓊玫", "周婉珍", "李蕙君", "林唐逵", "陳子淇", "李怡萱", "周虹瑜", "林雅蘋", "邱玟瑛", "楊仙合", "龔億珊", "黃瓊蓮", "黃麗美", "王淑貞", "鄭凱云", "王美倫", "林依琳", "鄭芳宜", "簡瑜萱", "陳品希", "蔡宛庭", "葉舒鳳", "葉汶沁", "林俊吟", "周千惠", "黃雅慧", "林時吟", "金宜岑", "蔡明祝", "謝沂錚", "張曼翎", "吳宛璇", "許依雅", "柯絲萱", "周黃玟靜", "林珮璇", "吳金燕", "黃翠媛", "黃湘婷", "劉芮蓁", "林沄沄", "趙硯柔"];
-let UNIT_MAP        = {"邱沛妮": "苗栗縣政府衛生局", "羅秀珍": "宜蘭縣大同鄉衛生所", "張禎倪": "宜蘭縣員山鄉衛生所", "陳思汝": "宜蘭縣三星鄉衛生所", "楊筱棻": "宜蘭縣五結鄉衛生所", "張依文": "澎湖縣政府衛生局", "蔡筠臻": "馬公市第一衞生所", "陳建儒": "宜蘭縣政府衛生局", "鄭嘉鈞": "新竹市衛生局", "吳柏翰": "臺東縣衛生局", "姜淑梅": "臺東縣衛生局", "唐文玲": "臺北市政府衛生局", "曾意喬": "甲仙區衛生所", "黃秀芝": "桃園市政府衛生局", "黃律淇": "新竹縣政府衛生局", "廖冠涵": "新北市政府衛生局", "張子寧": "宜蘭縣政府衛生局", "周心緹": "宜蘭縣礁溪鄉衛生所", "曾詒旋": "連江縣衛生局", "蔡宜真": "新竹縣政府衛生局", "蘇婉真": "高雄市政府衛生局", "李季紋": "高雄市政府衛生局", "李淑玫": "金寧鄉衛生所", "葉祐瑄": "花蓮縣衛生局", "陳國翠": "花蓮縣衛生局", "林佩珍": "金城鎮衛生所", "沈宥瑀": "草屯鎮衛生所", "曾琇鈺": "宜蘭縣蘇澳鎮衛生所", "簡蓓心": "南澳鄉衛生所", "傅蘭美": "梨山衛生所", "陳姳蓁": "保健科", "趙莉芬": "長庚科技大學", "林慧萍": "長庚科技大學", "黃莉媛": "基隆長庚醫院", "倪麗芬": "長庚科技大學", "林文婕": "財團法人桃園市社會福利基金會", "許碧芬": "長庚科技大學", "陳偉婷": "長庚科技大學", "吳思霖": "林口長庚紀念醫院", "黃翠媛": "長庚科技大學", "林偉民": "長庚科技大學", "侯嘉玲": "高齡長期照顧處", "蔡靚瑜": "新北市高齡長期照顧處", "蕭冰如": "長庚科技大學護理系", "戴忻萱": "新北市政府高齡長期照顧處", "李宛玲": "嘉義縣衛生局", "凃君瑾": "嘉義縣衛生局", "顏效禹": "雲林縣衛生局", "蔡旻珊": "雲林縣衛生局", "柯宜妮": "嘉義縣布袋鎮衛生所", "洪珮芳": "高雄市湖內區衛生所", "鄭可馨": "茂林區衛生所", "張憶美": "高雄市三民區第二衛生所", "蘇文婷": "高雄市旗津區衛生所", "陳怡君": "高雄市鳳山區第二衛生所", "葉修妙": "鳳山區衛生所", "張美娟": "高雄市林園區衛生所", "江宜芳": "高雄市政府衛生局", "葉芳妏": "高雄市政府衛生局", "陳慧君": "高雄市政府衛生局", "徐苡絜": "岡山區衛生所", "邱毓亭": "高雄市旗山區衛生所", "林姵辰": "六龜區衛生所", "曾如君": "高雄市杉林區衛生所", "鄭筑云": "三民區衛生所", "陳月嬌": "高雄市茄萣區衛生所", "萬佳玲": "高雄市政府衛生局", "丁怡心": "彌陀區衛生所", "蘇秋菊": "鳥松區衛生所", "吳素慎": "阿蓮區衛生所", "邱雅甜": "臺南市政府衛生局", "梁耀予": "高雄市永安區衛生所", "蔡靜芬": "高雄市永安區衛生所", "謝心嵐": "臺南市政府衛生局", "張秀寬": "高雄市代寮區衛生所", "饒慧雯": "臺南市政府衛生局", "林美慧": "台南市龍崎區衛生所", "張倖甄": "臺南市鹽水區衛生所", "吳庭禎": "高雄市政府衛生局", "許玉瓊": "臺南市政府衛生局", "王筱婷": "二崙鄉衛生所", "楊靜如": "崙背鄉衛生所", "劉彥芝": "高雄市阿蓮區衛生所", "廖怡婷": "北門區衛生所", "謝怡萱": "雲林縣元長鄉衛生所", "王已甄": "莿桐鄉衛生所", "廖書岑": "苓雅區衛生所", "楊佳蓁": "臺南市政府衛生局", "楊欣恬": "虎尾鎮衛生所", "陳席珍": "雲林縣水林鄉衛生所", "蔡惠雅": "彰化縣衛生局", "許純夢": "雲林縣林內鄉衛生所", "林柳足": "雲林縣土庫鎮衛生所", "楊惠如": "古坑鄉衛生所", "楊千毅": "嘉義市東區衛生所", "林梅芳": "雲林縣西螺鎮衛生所", "羅冠麟": "嘉義市東區衛生所", "傅瓊玫": "嘉義市東區衛生所", "周婉珍": "屏東縣來義鄉衛生所", "李蕙君": "雲林縣東勢鄉衛生所", "林唐逵": "嘉義市東區衛生所", "陳子淇": "玉井區衛生所", "李怡萱": "南投縣政府衛生局", "周虹瑜": "南投縣政府衛生局", "林雅蘋": "高雄市政府衛生局", "邱玟瑛": "仁德區衛生所", "楊仙合": "台南市北區衛生所", "龔億珊": "雲林縣四湖鄉衛生所", "黃瓊蓮": "臺南市歸仁區衛生所", "黃麗美": "國立中山大學", "王淑貞": "麥寮鄉衛生所", "鄭凱云": "嘉義市西區衛生所", "王美倫": "嘉義市西區衛生所", "林依琳": "嘉義縣六腳鄉衛生所", "鄭芳宜": "鼓山區衛生所", "簡瑜萱": "斗南鎮衛生所", "陳品希": "大埤衛生所", "蔡宛庭": "保健科", "葉舒鳳": "斗六市衛生所", "葉汶沁": "屏東縣政府衛生局", "林俊吟": "玉井區衛生所", "周千惠": "玉井區衛生所", "黃雅慧": "寶建醫院", "林時吟": "竹山鎮衛生所", "金宜岑": "信義鄉衛生所", "蔡明祝": "高雄市三民區第二衛生所", "謝沂錚": "楠西區衛生所", "張曼翎": "南投縣鹿谷鄉衛生所", "吳宛璇": "高雄市政府衛生局", "許依雅": "雲林縣衛生局", "柯絲萱": "桃源區衛生所", "周黃玟靜": "高雄市小港區衛生所", "林珮璇": "屏東縣政府社會處", "吳金燕": "彰化基督教醫院", "黃湘婷": "嘉義市政府衛生局", "劉芮蓁": "嘉義市政府衛生局", "林沄沄": "衛生福利部恆春旅遊醫院", "趙硯柔": "嘉義縣衛生局"};
+const PRELOADED_NORTH = ["邱沛妮", "羅秀珍", "張禎倪", "陳思汝", "楊筱棻", "張依文", "蔡筠臻", "陳建儒", "鄭嘉鈞", "吳柏翰", "姜淑梅", "唐文玲", "曾意喬", "黃秀芝", "黃律淇", "廖冠涵", "張子寧", "周心緹", "曾詒旋", "蔡宜真", "蘇婉真", "李季紋", "李淑玫", "葉祐瑄", "陳國翠", "林佩珍", "沈宥瑀", "曾琇鈺", "簡蓓心", "傅蘭美", "陳姳蓁", "趙莉芬", "林慧萍", "黃莉媛", "倪麗芬", "林文婕", "許碧芬", "陳偉婷"];
+const PRELOADED_SOUTH = ["李宛玲", "凃君瑾", "顏效禹", "蔡旻珊", "柯宜妮", "洪珮芳", "鄭可馨", "張憶美", "蘇文婷", "陳怡君", "葉修妙", "張美娟", "江宜芳", "葉芳妏", "陳慧君", "徐苡絜", "邱毓亭", "林姵辰", "曾如君", "鄭筑云", "陳月嬌", "萬佳玲", "丁怡心", "蘇秋菊", "吳素慎", "邱雅甜", "梁耀予", "蔡靜芬", "謝心嵐", "張秀寬", "饒慧雯", "林美慧", "張倖甄", "吳庭禎", "許玉瓊", "王筱婷", "楊靜如", "劉彥芝", "廖怡婷", "劉彥芝", "謝怡萱", "王已甄", "廖書岑", "楊佳蓁", "楊欣恬", "陳席珍", "蔡惠雅", "許純夢", "林柳足", "楊惠如", "楊千毅", "林梅芳", "羅冠麟", "傅瓊玫", "周婉珍", "李蕙君", "林唐逵", "陳子淇", "李怡萱", "周虹瑜", "林雅蘋", "邱玟瑛", "楊仙合", "龔億珊", "黃瓊蓮", "黃麗美", "王淑貞", "鄭凱云", "王美倫", "林依琳", "鄭芳宜", "簡瑜萱", "陳品希", "蔡宛庭", "葉舒鳳", "葉汶沁", "林俊吟", "周千惠", "黃雅慧", "林時吟", "金宜岑", "蔡明祝", "謝沂錚", "張曼翎", "吳宛璇", "許依雅", "柯絲萱", "周黃玟靜", "林珮璇", "吳金燕"];
+const UNIT_MAP        = {"邱沛妮": "苗栗縣政府衛生局", "羅秀珍": "宜蘭縣大同鄉衛生所", "張禎倪": "宜蘭縣員山鄉衛生所", "陳思汝": "宜蘭縣三星鄉衛生所", "楊筱棻": "宜蘭縣五結鄉衛生所", "張依文": "澎湖縣政府衛生局", "蔡筠臻": "馬公市第一衞生所", "陳建儒": "宜蘭縣政府衛生局", "鄭嘉鈞": "新竹市衛生局", "吳柏翰": "臺東縣衛生局", "姜淑梅": "臺東縣衛生局", "唐文玲": "臺北市政府衛生局", "曾意喬": "甲仙區衛生所", "黃秀芝": "桃園市政府衛生局", "黃律淇": "新竹縣政府衛生局", "廖冠涵": "新北市政府衛生局", "張子寧": "宜蘭縣政府衛生局", "周心緹": "宜蘭縣礁溪鄉衛生所", "曾詒旋": "連江縣衛生局", "蔡宜真": "新竹縣政府衛生局", "蘇婉真": "高雄市政府衛生局", "李季紋": "高雄市政府衛生局", "李淑玫": "金寧鄉衛生所", "葉祐瑄": "花蓮縣衛生局", "陳國翠": "花蓮縣衛生局", "林佩珍": "金城鎮衛生所", "沈宥瑀": "草屯鎮衛生所", "曾琇鈺": "宜蘭縣蘇澳鎮衛生所", "簡蓓心": "南澳鄉衛生所", "傅蘭美": "梨山衛生所", "陳姳蓁": "保健科", "趙莉芬": "長庚科技大學", "林慧萍": "長庚科技大學", "黃莉媛": "基隆長庚醫院", "倪麗芬": "長庚科技大學", "林文婕": "財團法人桃園市社會福利基金會", "許碧芬": "長庚科技大學", "陳偉婷": "長庚科技大學", "李宛玲": "嘉義縣衛生局", "凃君瑾": "嘉義縣衛生局", "顏效禹": "雲林縣衛生局", "蔡旻珊": "雲林縣衛生局", "柯宜妮": "嘉義縣布袋鎮衛生所", "洪珮芳": "高雄市湖內區衛生所", "鄭可馨": "茂林區衛生所", "張憶美": "高雄市三民區第二衛生所", "蘇文婷": "高雄市旗津區衛生所", "陳怡君": "高雄市鳳山區第二衛生所", "葉修妙": "鳳山區衛生所", "張美娟": "高雄市林園區衛生所", "江宜芳": "高雄市政府衛生局", "葉芳妏": "高雄市政府衛生局", "陳慧君": "高雄市政府衛生局", "徐苡絜": "岡山區衛生所", "邱毓亭": "高雄市旗山區衛生所", "林姵辰": "六龜區衛生所", "曾如君": "高雄市杉林區衛生所", "鄭筑云": "三民區衛生所", "陳月嬌": "高雄市茄萣區衛生所", "萬佳玲": "高雄市政府衛生局", "丁怡心": "彌陀區衛生所", "蘇秋菊": "鳥松區衛生所", "吳素慎": "阿蓮區衛生所", "邱雅甜": "臺南市政府衛生局", "梁耀予": "高雄市永安區衛生所", "蔡靜芬": "高雄市永安區衛生所", "謝心嵐": "臺南市政府衛生局", "張秀寬": "高雄市代寮區衛生所", "饒慧雯": "臺南市政府衛生局", "林美慧": "台南市龍崎區衛生所", "張倖甄": "臺南市鹽水區衛生所", "吳庭禎": "高雄市政府衛生局", "許玉瓊": "臺南市政府衛生局", "王筱婷": "二崙鄉衛生所", "楊靜如": "崙背鄉衛生所", "劉彥芝": "高雄市阿蓮區衛生所", "廖怡婷": "北門區衛生所", "謝怡萱": "雲林縣元長鄉衛生所", "王已甄": "莿桐鄉衛生所", "廖書岑": "苓雅區衛生所", "楊佳蓁": "臺南市政府衛生局", "楊欣恬": "虎尾鎮衛生所", "陳席珍": "雲林縣水林鄉衛生所", "蔡惠雅": "彰化縣衛生局", "許純夢": "雲林縣林內鄉衛生所", "林柳足": "雲林縣土庫鎮衛生所", "楊惠如": "古坑鄉衛生所", "楊千毅": "嘉義市東區衛生所", "林梅芳": "雲林縣西螺鎮衛生所", "羅冠麟": "嘉義市東區衛生所", "傅瓊玫": "嘉義市東區衛生所", "周婉珍": "屏東縣來義鄉衛生所", "李蕙君": "雲林縣東勢鄉衛生所", "林唐逵": "嘉義市東區衛生所", "陳子淇": "玉井區衛生所", "李怡萱": "南投縣政府衛生局", "周虹瑜": "南投縣政府衛生局", "林雅蘋": "高雄市政府衛生局", "邱玟瑛": "仁德區衛生所", "楊仙合": "台南市北區衛生所", "龔億珊": "雲林縣四湖鄉衛生所", "黃瓊蓮": "臺南市歸仁區衛生所", "黃麗美": "國立中山大學", "王淑貞": "麥寮鄉衛生所", "鄭凱云": "嘉義市西區衛生所", "王美倫": "嘉義市西區衛生所", "林依琳": "嘉義縣六腳鄉衛生所", "鄭芳宜": "鼓山區衛生所", "簡瑜萱": "斗南鎮衛生所", "陳品希": "大埤衛生所", "蔡宛庭": "保健科", "葉舒鳳": "斗六市衛生所", "葉汶沁": "屏東縣政府衛生局", "林俊吟": "玉井區衛生所", "周千惠": "玉井區衛生所", "黃雅慧": "寶建醫院", "林時吟": "竹山鎮衛生所", "金宜岑": "信義鄉衛生所", "蔡明祝": "高雄市三民區第二衛生所", "謝沂錚": "楠西區衛生所", "張曼翎": "南投縣鹿谷鄉衛生所", "吳宛璇": "高雄市政府衛生局", "許依雅": "雲林縣衛生局", "柯絲萱": "桃源區衛生所", "周黃玟靜": "高雄市小港區衛生所", "林珮璇": "屏東縣政府社會處", "吳金燕": "彰化基督教醫院"};
 
 // ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
-const VENUE_FULL = [
-  '【北部場】115年6月16日（週二）｜TCCC台灣文創訓練中心(1館)- 752、753會議室（台北市中山區松江路131號7樓之1）',
-  '【南部場】115年6月30日（週二）｜長庚科技大學嘉義校區- 百人階梯教室（嘉義縣朴子市嘉朴路西段2號）'
-];
-let _onsiteMode = false;
 let ciSession = 0, coSession = 0;
 let sigDrawing = false, sigHasMark = false;
 let sigCtx, sigCanvas;
@@ -445,21 +385,6 @@ function saveCoTimes(t){lsSave('icope_cotimes',t);}
 function codes(){return ls('icope_codes',[null,null]);}
 function saveCodes(c){lsSave('icope_codes',c);}
 function getPw(){return ls('icope_pw','icope2025');}
-async function fetchRoster(){
-  const apiUrl=getApiUrl();
-  if(!apiUrl) return;
-  try{
-    const r=await fetch(apiUrl+'?action=getRoster');
-    const j=await r.json();
-    if(j && j.success && Array.isArray(j.north) && Array.isArray(j.south) && (j.north.length+j.south.length)>0){
-      PRELOADED_NORTH=j.north; PRELOADED_SOUTH=j.south;
-      if(j.unitMap) UNIT_MAP=j.unitMap;
-      // 重新整理目前簽到頁的名單下拉與狀態
-      try{ updateNameDropdown(''); }catch(e){}
-      console.log('名單已從證書版自動更新：北'+j.north.length+' 南'+j.south.length);
-    }
-  }catch(e){ console.warn('名單自動抓取失敗，使用內建名單',e); }
-}
 function getApiUrl(){return ls('icope_api_url','https://script.google.com/macros/s/AKfycbyx-fa8PZkmw3dZVa3Ugl5pDDu95VrDYkPmpZEr6fXHHn4eZ7xfL6OjESZWopfWr7YGSw/exec');}
 function sessionLabels(){return ls('icope_sess_labels',['北部場次','南部場次']);}
 
@@ -513,6 +438,7 @@ function selectCoSession(i){
   coSession=i;
   [0,1].forEach(j=>document.getElementById('co-s'+j).classList.toggle('selected',j===i));
   updateCoLockUI();
+  resetSurveyStep();
 }
 
 // ═══════════════════════════════════════════════
@@ -550,41 +476,18 @@ function hideDropdown(){
 function checkNameStatus(name){
   const el=document.getElementById('name-status');
   const btn=document.getElementById('ci-submit-btn');
-  const onsiteBtn=document.getElementById('ci-onsite-btn');
-  _onsiteMode=false;
   if(!name){clearNameStatus();return;}
   const list=getCurrentList();
   const found=list.includes(name);
-  if(found){
-    el.className='name-status ok';
-    el.textContent='✅ 已確認報名，歡迎參加！';
-    btn.disabled=false;
-    if(onsiteBtn) onsiteBtn.style.display='none';
-  } else {
-    el.className='name-status ng';
-    el.textContent='⚠️ 查無預先報名資料。若您是現場報名，請點下方按鈕。';
-    btn.disabled=true;
-    if(onsiteBtn) onsiteBtn.style.display='block';
-  }
-}
-
-function enableOnsite(){
-  _onsiteMode=true;
-  const el=document.getElementById('name-status');
-  el.className='name-status ok';
-  el.textContent='✚ 現場報名模式：將補登記至名單，請務必填寫服務單位';
-  document.getElementById('ci-submit-btn').disabled=false;
-  const onsiteBtn=document.getElementById('ci-onsite-btn');
-  if(onsiteBtn) onsiteBtn.style.display='none';
+  el.className='name-status '+(found?'ok':'ng');
+  el.textContent=found?'✅ 已確認報名，歡迎參加！':'❌ 查無此報名資料，請聯繫工作人員確認';
+  btn.disabled=!found;
 }
 
 function clearNameStatus(){
   const el=document.getElementById('name-status');
   el.className='name-status';
   el.textContent='';
-  _onsiteMode=false;
-  const onsiteBtn=document.getElementById('ci-onsite-btn');
-  if(onsiteBtn) onsiteBtn.style.display='none';
   document.getElementById('ci-submit-btn').disabled=false;
 }
 
@@ -629,14 +532,8 @@ async function submitCheckin(){
   const name=document.getElementById('ci-name').value.trim();
   if(!name){showAlert('ci-alert','error','請輸入姓名');return;}
 
-  if(!isCiOpen()){showAlert('ci-alert','error','簽到時間已截止，請聯繫工作人員');return;}
   const list=getCurrentList();
-  const isRegistered=list.includes(name);
-  if(!isRegistered && !_onsiteMode){showAlert('ci-alert','error','查無報名資料，請點「現場報名」按鈕或聯繫工作人員');return;}
-  if(_onsiteMode && !document.getElementById('ci-unit').value.trim()){showAlert('ci-alert','error','現場報名請務必填寫服務單位');return;}
-  const ciCodeVal=document.getElementById('ci-verify-code');
-  const ciCodeReq=ciCodes()[ciSession];
-  if(ciCodeReq&&(!ciCodeVal||ciCodeVal.value.trim()!==String(ciCodeReq))){showAlert('ci-alert','error','驗證碼錯誤，請向工作人員確認');return;}
+  if(!list.includes(name)){showAlert('ci-alert','error','查無報名資料，請聯繫工作人員');return;}
 
   const sig=getSigData();
   if(!sig){showAlert('ci-alert','error','請完成電子簽名');return;}
@@ -651,46 +548,18 @@ async function submitCheckin(){
   const recs=records();
   const exists=recs.find(r=>r.session===ciSession&&r.name===name);
   if(exists&&exists.checkin){showAlert('ci-alert','info','您已完成簽到');return;}
-  const newRec = {id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,sigUrl:'',registered:isRegistered,onsite:!isRegistered};
   if(exists){exists.checkin=now;exists.sig=sig;exists.unit=unit;exists.idno=idno;exists.role=role;}
-  else{recs.push(newRec);}
+  else{recs.push({id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,registered:true});}
   saveRecords(recs);
 
-  // 雲端上傳，捕捉簽名 Drive URL（失敗自動重試，最多5次）
+  // 雲端上傳
   const apiUrl=getApiUrl();
-  let cloudFailed=false;
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
-    const payload=JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,venueFull:VENUE_FULL[ciSession]});
-    let uploaded=false;
-    for(let attempt=1;attempt<=5 && !uploaded;attempt++){
-      try{
-        const resp=await fetch(apiUrl,{method:'POST',body:payload});
-        const json=await resp.json();
-        uploaded=true;
-        if(json.sigUrl){
-          const recs2=records();
-          const target=recs2.find(r=>r.id===newRec.id||(r.session===ciSession&&r.name===name));
-          if(target){target.sigUrl=json.sigUrl;target.synced=true;saveRecords(recs2);}
-        }
-      }catch(e){
-        console.warn('雲端上傳第'+attempt+'次失敗',e);
-        if(attempt<5) await new Promise(r=>setTimeout(r,1000*attempt));
-      }
-    }
+    try{
+      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:true})});
+    }catch(e){console.warn('雲端上傳失敗，資料已存本機',e);}
     document.getElementById('loading-overlay').classList.remove('show');
-    if(!uploaded){
-      cloudFailed=true;
-      const recs3=records();
-      const t3=recs3.find(r=>r.id===newRec.id||(r.session===ciSession&&r.name===name));
-      if(t3){t3.synced=false;saveRecords(recs3);}
-    }
-  }
-
-  // 誠實回報：雲端失敗就「不算簽到成功」，請學員重試或找工作人員
-  if(cloudFailed){
-    showAlert('ci-alert','error','⚠️ 網路忙線，簽到尚未送出！請按「確認簽到」再試一次，或請工作人員協助（請勿關閉本頁）');
-    return; // 保留已填資料與簽名，方便直接重按
   }
 
   showAlert('ci-alert','success','✅ 簽到完成！感謝您的參與');
@@ -700,6 +569,52 @@ async function submitCheckin(){
   document.getElementById('ci-role').value='';
   clearNameStatus();
   clearSig();
+}
+
+// ═══════════════════════════════════════════════
+//  CHECKOUT — 問卷強制步驟
+// ═══════════════════════════════════════════════
+function onSurveyOpen(){
+  setTimeout(()=>{
+    const el = document.getElementById('co-survey-confirm');
+    el.style.display = 'block';
+    el.style.animation = 'fadeIn 0.4s ease';
+  }, 1500);
+}
+function toggleSurveyDone(){
+  const cb = document.getElementById('co-survey-done');
+  cb.checked = !cb.checked;
+  const box = document.getElementById('co-survey-check-box');
+  const label = box.closest('label');
+  const txt = document.getElementById('co-survey-label');
+  if(cb.checked){
+    box.textContent = '✓';
+    box.style.background = '#0a7c6e';
+    box.style.borderColor = '#0a7c6e';
+    box.style.color = 'white';
+    box.style.fontWeight = '900';
+    label.style.background = '#e8f5f3';
+    label.style.borderColor = '#0a7c6e';
+    label.style.boxShadow = '0 0 0 3px rgba(10,124,110,0.2)';
+    if(txt){ txt.style.color='#0a7c6e'; txt.style.fontSize='16px'; }
+  } else {
+    box.textContent = '';
+    box.style.background = 'white';
+    box.style.borderColor = '#ccc';
+    box.style.boxShadow = '';
+    label.style.background = 'white';
+    label.style.borderColor = '#f57c00';
+    label.style.boxShadow = '';
+    if(txt){ txt.style.color='#9e9e9e'; txt.style.fontSize='15px'; }
+  }
+  updateCoSubmitBtn();
+}
+function updateCoSubmitBtn(){
+  const done = document.getElementById('co-survey-done').checked;
+  const btn = document.getElementById('co-submit-btn');
+  btn.disabled = !done;
+  btn.style.opacity = done ? '1' : '0.5';
+  btn.title = done ? '' : '請先完成回饋問卷';
 }
 
 // ═══════════════════════════════════════════════
@@ -736,15 +651,28 @@ async function submitCheckout(){
   showAlert('co-alert','success','🚪 簽退完成！感謝參與');
   document.getElementById('co-name').value='';
   document.getElementById('co-code').value='';
+  resetSurveyStep();
+}
+
+function resetSurveyStep(){
+  const cb = document.getElementById('co-survey-done');
+  cb.checked = false;
+  document.getElementById('co-survey-confirm').style.display='none';
+  const box = document.getElementById('co-survey-check-box');
+  box.textContent='';
+  box.style.background='white';
+  box.style.borderColor='#ccc';
+  const label = box.closest('label');
+  if(label){ label.style.background='white'; label.style.borderColor='#f57c00'; }
+  const btn=document.getElementById('co-submit-btn');
+  btn.disabled=true;
+  btn.style.opacity='0.5';
 }
 
 // ═══════════════════════════════════════════════
 //  ADMIN
 // ═══════════════════════════════════════════════
 function refreshAdmin(){
-  refreshEventInfo();
-  updateCiCodeUI();
-  updateCiTimeUI();
   const labels=sessionLabels();
   document.getElementById('adm-s0-label').value=labels[0]||'';
   document.getElementById('adm-s1-label').value=labels[1]||'';
@@ -820,54 +748,6 @@ function changePw(){
   document.getElementById('adm-pw1').value='';document.getElementById('adm-pw2').value='';
 }
 
-async function buildPrintSheet(printSession){
-  const apiUrl=getApiUrl();
-  const status=document.getElementById('print-status');
-  if(!apiUrl){status.textContent='❌ 尚未設定 API 網址';return;}
-  const label=printSession==='north'?'北部場':printSession==='south'?'南部場':'今日場次';
-  status.textContent='產生「'+label+'」中，請稍候…';
-  document.getElementById('loading-overlay').classList.add('show');
-  try{
-    const body={action:'buildPrint'};
-    if(printSession) body.printSession=printSession;
-    const r=await fetch(apiUrl,{method:'POST',body:JSON.stringify(body)});
-    const j=await r.json();
-    document.getElementById('loading-overlay').classList.remove('show');
-    if(j.success){
-      status.innerHTML='✅ 已產生「'+label+'」（'+(j.count||0)+' 筆）！請到 Google Sheet「列印簽到表」分頁下載 PDF';
-    }else{
-      status.textContent='⚠️ 產生失敗：'+(j.error||'未知錯誤');
-    }
-  }catch(e){
-    document.getElementById('loading-overlay').classList.remove('show');
-    status.textContent='⚠️ 連線失敗：'+e.message;
-  }
-}
-
-async function clearTestData(){
-  if(!confirm('確定要清除所有簽到測試資料嗎？\n\n會清除：\n• 本機簽到紀錄\n• 雲端「簽到紀錄」分頁\n\n不會動到證書版報名資料。\n此動作無法復原！')) return;
-  const status=document.getElementById('adm-clear-status');
-  // 清本機
-  localStorage.removeItem('icope_records');
-  status.textContent='本機已清除，正在清除雲端…';
-  // 清雲端
-  const apiUrl=getApiUrl();
-  if(apiUrl){
-    try{
-      document.getElementById('loading-overlay').classList.add('show');
-      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'clearRecords'})});
-      document.getElementById('loading-overlay').classList.remove('show');
-      status.textContent='✅ 已清除本機與雲端所有簽到測試資料';
-    }catch(e){
-      document.getElementById('loading-overlay').classList.remove('show');
-      status.textContent='⚠️ 本機已清除，但雲端清除失敗，請稍後重試';
-    }
-  } else {
-    status.textContent='✅ 已清除本機簽到資料';
-  }
-  refreshRecords();
-}
-
 // ═══════════════════════════════════════════════
 //  RECORDS
 // ═══════════════════════════════════════════════
@@ -888,141 +768,28 @@ function refreshRecords(){
   </tr>`).join('');
 }
 
-function getEventInfo(){return ls('icope_event_info',{name:'115年長者內在能力檢測(ICOPE)服務人員教育訓練－「從ICOPE到社會處方箋」教育訓練',date0:'115年6月16日（二）13:30-16:30',loc0:'TCCC台灣文創訓練中心(1館) 752、753會議室（台北市中山區松江路131號7樓之1）',date1:'115年6月30日（二）13:30-16:30',loc1:'長庚科技大學嘉義校區 百人階梯教室（嘉義縣朴子市嘉朴路西段2號）',hours:'3小時'});}
-function saveEventInfo(){
-  lsSave('icope_event_info',{
-    name: document.getElementById('adm-event-name').value.trim(),
-    date0:document.getElementById('adm-event-date0').value.trim(),
-    loc0: document.getElementById('adm-event-loc0').value.trim(),
-    date1:document.getElementById('adm-event-date1').value.trim(),
-    loc1: document.getElementById('adm-event-loc1').value.trim(),
-    hours:document.getElementById('adm-event-hours').value.trim(),
-  });
-  alert('活動資訊已儲存');
-}
-function refreshEventInfo(){
-  const e=getEventInfo();
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
-  set('adm-event-name',e.name);set('adm-event-date0',e.date0);set('adm-event-loc0',e.loc0);
-  set('adm-event-date1',e.date1);set('adm-event-loc1',e.loc1);set('adm-event-hours',e.hours);
-}
-
-async function getExportRecords(){
-  const apiUrl=getApiUrl();
-  if(apiUrl){
-    try{
-      document.getElementById('loading-overlay').classList.add('show');
-      const r=await fetch(apiUrl+'?action=getRecords');
-      const j=await r.json();
-      document.getElementById('loading-overlay').classList.remove('show');
-      if(j.success && Array.isArray(j.records)){
-        return j.records.filter(x=>x.checkin).map(x=>({sessionName:x.session,name:x.name,unit:x.unit,role:x.role,idno:x.idno,checkin:x.checkin,checkout:x.checkout,sigUrl:x.sigUrl}));
-      }
-    }catch(e){
-      document.getElementById('loading-overlay').classList.remove('show');
-      console.warn('雲端讀取失敗，改用本機資料',e);
-    }
-  }
+function exportCsv(type){
+  const recs=records().filter(r=>r.checkin);
   const labels=sessionLabels();
-  return records().filter(r=>r.checkin).map(r=>({sessionName:labels[r.session]||['北部場次','南部場次'][r.session],name:r.name,unit:r.unit,role:r.role,idno:r.idno,checkin:r.checkin,checkout:r.checkout,sigUrl:r.sigUrl}));
-}
-
-async function exportCsv(type){
-  const recs=await getExportRecords();
-  const ev=getEventInfo();
-  const csvRow=arr=>arr.map(v=>{const s=String(v==null?'':v);return /[,\"\n]/.test(s)?'\"'+s.replace(/\"/g,'\"\"')+'\"':s;}).join(',');
-  let rows,fname;
-
+  let rows,name;
   if(type==='credit'){
-    rows=[
-      csvRow(['活動名稱',ev.name]),
-      csvRow(['北部場','日期：'+ev.date0,'地點：'+ev.loc0]),
-      csvRow(['南部場','日期：'+ev.date1,'地點：'+ev.loc1]),
-      csvRow(['繼續教育時數',ev.hours]),
-      '',
-      csvRow(['場次','姓名','服務單位','身份類別','身份證字號','簽到時間','簽退時間','電子簽名連結']),
-      ...recs.map(r=>csvRow([r.sessionName,r.name,r.unit||'',r.role||'',r.idno||'',r.checkin||'',r.checkout||'',r.sigUrl||'']))
-    ];
-    fname='ICOPE繼續教育積分簽到表.csv';
+    const header='場次,姓名,服務單位,身份類別,身份證字號,簽到時間,簽退時間';
+    rows=[header,...recs.map(r=>[labels[r.session]||r.session,r.name,r.unit||'',r.role||'',r.idno||'',r.checkin||'',r.checkout||''].join(','))];
+    name='ICOPE繼續教育積分簽到表.csv';
   } else {
-    rows=[
-      csvRow(['活動名稱',ev.name]),
-      csvRow(['北部場','日期：'+ev.date0,'地點：'+ev.loc0]),
-      csvRow(['南部場','日期：'+ev.date1,'地點：'+ev.loc1]),
-      '',
-      csvRow(['序號','場次','姓名','服務單位','活動時間','電子簽名連結']),
-      ...recs.map((r,i)=>csvRow([i+1,r.sessionName,r.name,r.unit||'','13:30-17:30',r.sigUrl||'']))
-    ];
-    fname='ICOPE核銷簽到表.csv';
+    const header='序號,場次,姓名,服務單位,簽到時間';
+    rows=[header,...recs.map((r,i)=>[i+1,labels[r.session]||r.session,r.name,r.unit||'',r.checkin||''].join(','))];
+    name='ICOPE核銷簽到表.csv';
   }
   const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
-}
-
-// ═══════════════════════════════════════════════
-//  簽到驗證碼 & 截止時間
-// ═══════════════════════════════════════════════
-function ciCodes(){return ls('icope_ci_codes',[null,null]);}
-function saveCiCodes(c){lsSave('icope_ci_codes',c);}
-function ciTimes(){return ls('icope_ci_times',[null,null]);}
-function saveCiTimes(t){lsSave('icope_ci_times',t);}
-
-function genCiCode(){
-  const sess=parseInt(document.querySelector('input[name="adm-ci-vc-sess"]:checked').value);
-  const code=String(Math.floor(1000+Math.random()*9000));
-  const c=ciCodes();c[sess]=code;saveCiCodes(c);
-  updateCiCodeUI();
-}
-function clearCiCode(){
-  const sess=parseInt(document.querySelector('input[name="adm-ci-vc-sess"]:checked').value);
-  const c=ciCodes();c[sess]=null;saveCiCodes(c);
-  updateCiCodeUI();
-}
-function updateCiCodeUI(){
-  const c=ciCodes()[0];
-  const disp=document.getElementById('adm-ci-code-display');
-  const stat=document.getElementById('adm-ci-code-status');
-  if(disp) disp.textContent=c?String(c):'---';
-  if(stat) stat.textContent=c?'驗證碼啟用中，學員須輸入才能簽到':'未設定（無需驗證碼）';
-  const grp=document.getElementById('ci-code-group');
-  const lbl=document.getElementById('sig-label');
-  if(grp) grp.style.display=c?'block':'none';
-  if(lbl) lbl.textContent=c?'⑥ 電子簽名':'⑤ 電子簽名';
-}
-function saveCiTime(){
-  const sess=parseInt(document.querySelector('input[name="adm-ci-sess"]:checked').value);
-  const t=document.getElementById('adm-ci-time').value;
-  const ct=ciTimes();ct[sess]=t||null;saveCiTimes(ct);
-  updateCiTimeUI();alert('已儲存');
-}
-function clearCiTime(){
-  const sess=parseInt(document.querySelector('input[name="adm-ci-sess"]:checked').value);
-  const ct=ciTimes();ct[sess]=null;saveCiTimes(ct);
-  document.getElementById('adm-ci-time').value='';
-  updateCiTimeUI();
-}
-function updateCiTimeUI(){
-  const t=ciTimes()[0];
-  const el=document.getElementById('adm-ci-status');
-  if(el) el.textContent=t?'目前設定：'+t+' 截止簽到':'目前設定：隨時可簽到';
-}
-function isCiOpen(){
-  const t=ciTimes()[ciSession];
-  if(!t) return true;
-  const now=new Date();
-  const[h,m]=t.split(':').map(Number);
-  const deadline=new Date();deadline.setHours(h,m,0,0);
-  return now<=deadline;
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
 }
 
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('load',()=>{
-  fetchRoster();
   initSig();
-  updateCiCodeUI();
-  updateCiTimeUI();
   updateCoLockUI();
   checkApiWarn();
 });
