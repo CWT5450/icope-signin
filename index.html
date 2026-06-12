@@ -677,12 +677,20 @@ async function submitCheckin(){
 //  CHECKOUT — 問卷強制步驟
 // ═══════════════════════════════════════════════
 function onSurveyOpen(){
-  setTimeout(()=>{
-    const el = document.getElementById('co-survey-confirm');
-    el.style.display = 'block';
-    el.style.animation = 'fadeIn 0.4s ease';
-  }, 1500);
+  sessionStorage.setItem('icope_survey_opened','1');
+  setTimeout(()=>showSurveyConfirm(), 1500);
 }
+function showSurveyConfirm(){
+  const el=document.getElementById('co-survey-confirm');
+  if(el){ el.style.display='block'; el.style.animation='fadeIn 0.4s ease'; }
+}
+// 手機切換分頁回來時恢復勾勾
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&sessionStorage.getItem('icope_survey_opened')) showSurveyConfirm();
+});
+window.addEventListener('pageshow',()=>{
+  if(sessionStorage.getItem('icope_survey_opened')) showSurveyConfirm();
+});
 function toggleSurveyDone(){
   const cb = document.getElementById('co-survey-done');
   cb.checked = !cb.checked;
@@ -775,6 +783,7 @@ function closeCheckoutSuccess(){
 }
 
 function resetSurveyStep(){
+  sessionStorage.removeItem('icope_survey_opened');
   const cb = document.getElementById('co-survey-done');
   cb.checked = false;
   document.getElementById('co-survey-confirm').style.display='none';
