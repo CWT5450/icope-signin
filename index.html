@@ -89,6 +89,23 @@
   <span>資料上傳中…</span>
 </div>
 
+<!-- 簽退成功全螢幕畫面 -->
+<div id="checkout-success" style="display:none;position:fixed;inset:0;background:#0a7c6e;z-index:998;
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="font-size:90px;line-height:1;">✅</div>
+  <div style="font-size:36px;font-weight:900;color:white;letter-spacing:2px;">簽退完成！</div>
+  <div id="co-success-name" style="font-size:22px;color:rgba(255,255,255,0.85);font-weight:600;"></div>
+  <div style="font-size:15px;color:rgba(255,255,255,0.65);margin-top:8px;">感謝您今天的參與 🌿</div>
+  <div id="co-success-countdown"
+    style="margin-top:24px;font-size:13px;color:rgba(255,255,255,0.5);"></div>
+  <button onclick="closeCheckoutSuccess()"
+    style="margin-top:8px;padding:12px 32px;border:2px solid rgba(255,255,255,0.5);
+    border-radius:30px;background:transparent;color:white;font-size:15px;
+    font-weight:600;cursor:pointer;font-family:inherit;">
+    確認關閉
+  </button>
+</div>
+
 <div class="header">
   <div class="header-icon">🌿</div>
   <div>
@@ -722,10 +739,28 @@ async function submitCheckout(){
     try{await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkout',session:sessionLabel,name,checkoutTime:now})});}
     catch(e){console.warn('雲端簽退失敗',e);}
   }
-  showAlert('co-alert','success','🚪 簽退完成！感謝參與');
   document.getElementById('co-name').value='';
   document.getElementById('co-code').value='';
   resetSurveyStep();
+  showCheckoutSuccess(name);
+}
+
+let _coSuccessTimer=null;
+function showCheckoutSuccess(name){
+  const el=document.getElementById('checkout-success');
+  el.style.display='flex';
+  document.getElementById('co-success-name').textContent=name+' 您好';
+  let sec=5;
+  document.getElementById('co-success-countdown').textContent=`${sec} 秒後自動關閉`;
+  _coSuccessTimer=setInterval(()=>{
+    sec--;
+    if(sec<=0){clearInterval(_coSuccessTimer);closeCheckoutSuccess();}
+    else{document.getElementById('co-success-countdown').textContent=`${sec} 秒後自動關閉`;}
+  },1000);
+}
+function closeCheckoutSuccess(){
+  clearInterval(_coSuccessTimer);
+  document.getElementById('checkout-success').style.display='none';
 }
 
 function resetSurveyStep(){
