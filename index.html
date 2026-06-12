@@ -372,43 +372,25 @@ let PRELOADED_SOUTH = [...FALLBACK_SOUTH];
 let UNIT_MAP        = {...FALLBACK_UNIT};
 
 // ═══════════════════════════════════════════════
-//  從 Google Sheets 自動更新名單
+//  從 Apps Script 自動更新名單（getRoster）
 // ═══════════════════════════════════════════════
-const SHEET_ID  = '1qC--DvqgqpKHFvf4wZS6rqe3AKBc-XhOmSZJP3tT4qg';
-const SHEET_GID = '1663273806';
-
 async function loadNameList() {
+  const apiUrl = getApiUrl();
+  if (!apiUrl) {
+    document.getElementById('list-status').textContent = '⚠️ 使用備份名單（未設定 API 網址）';
+    document.getElementById('list-status').style.color = '#e65100';
+    return;
+  }
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
-    const res  = await fetch(url);
-    const text = await res.text();
-    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
-    const rows = json.table.rows;
-
-    const north = [], south = [], unitMap = {};
-    rows.forEach(row => {
-      const c = row.c;
-      if (!c || !c[3] || !c[3].v) return;
-      const session   = String(c[2]?.v || '');
-      const name      = String(c[3]?.v || '').trim();
-      const unit      = String(c[4]?.v || c[5]?.v || '').trim();
-      const cancelled = c[11]?.v;
-      if (!name || cancelled === true || String(cancelled).toUpperCase() === 'TRUE') return;
-      if (unit) unitMap[name] = unit;
-      if (session.includes('北部') || session.includes('北部場')) {
-        if (!north.includes(name)) north.push(name);
-      } else if (session.includes('南部') || session.includes('南部場')) {
-        if (!south.includes(name)) south.push(name);
-      }
-    });
-
-    if (north.length + south.length > 0) {
-      PRELOADED_NORTH = north;
-      PRELOADED_SOUTH = south;
-      UNIT_MAP = unitMap;
-      console.log(`✅ 名單更新成功：北部 ${north.length} 人，南部 ${south.length} 人`);
-      document.getElementById('list-status').textContent = `✅ 名單已更新（北部 ${north.length}人 ／ 南部 ${south.length}人）`;
-      document.getElementById('list-status').style.color = '#0a7c6e';
+    const res  = await fetch(apiUrl + '?action=getRoster');
+    const json = await res.json();
+    if (json.success && (json.north.length + json.south.length > 0)) {
+      PRELOADED_NORTH = json.north;
+      PRELOADED_SOUTH = json.south;
+      UNIT_MAP        = json.unitMap || {};
+      const el = document.getElementById('list-status');
+      el.textContent = `✅ 名單已更新（北部 ${json.north.length}人 ／ 南部 ${json.south.length}人）`;
+      el.style.color = '#0a7c6e';
     }
   } catch(e) {
     console.warn('名單抓取失敗，使用備份名單', e);
