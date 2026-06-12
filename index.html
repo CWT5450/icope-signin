@@ -107,6 +107,16 @@
   <div class="api-warn" id="api-warn">⚠️ 尚未設定 API 網址，資料將只存在本機。請至管理頁設定 Apps Script 網址。</div>
   <div id="list-status" style="font-size:12px;color:var(--gray);text-align:center;padding:6px 0 2px;">⏳ 名單載入中…</div>
 
+  <!-- 報到截止鎖定畫面 -->
+  <div id="ci-locked" style="display:none;">
+    <div class="card" style="text-align:center;padding:30px 20px;background:#fdecea;border-color:#e74c3c;">
+      <div style="font-size:48px;margin-bottom:10px;">🔒</div>
+      <div style="font-size:17px;font-weight:800;color:#c0392b;margin-bottom:6px;">報到已截止</div>
+      <div style="font-size:13px;color:#888;">如有問題請洽工作人員</div>
+    </div>
+  </div>
+
+  <div id="ci-content">
   <div class="card">
     <div class="card-title">選擇場次</div>
     <div class="sess-btns">
@@ -166,6 +176,7 @@
     <div id="ci-alert" class="alert"></div>
     <button class="btn btn-primary" id="ci-submit-btn" onclick="submitCheckin()">✅ 確認簽到</button>
   </div>
+  </div><!-- /ci-content -->
 </div>
 
 <!-- ══ 簽退頁 ══ -->
@@ -267,6 +278,19 @@
       <input type="text" id="adm-s1-label" placeholder="南部場次">
     </div>
     <button class="btn btn-sm btn-primary" onclick="saveSessionLabels()">儲存</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">報到截止設定</div>
+    <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
+      <label><input type="radio" name="adm-ci-sess" value="0" checked> 北部場</label>
+      <label><input type="radio" name="adm-ci-sess" value="1"> 南部場</label>
+    </div>
+    <p id="adm-ci-status" style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--gray);"></p>
+    <div class="row">
+      <button class="btn btn-sm btn-danger" onclick="lockCheckin()" style="background:#fdecea;color:#c0392b;">🔒 立即截止報到</button>
+      <button class="btn btn-sm btn-secondary" onclick="unlockCheckin()">🔓 重新開放報到</button>
+    </div>
   </div>
 
   <div class="card">
@@ -465,6 +489,7 @@ function selectCiSession(i){
   document.getElementById('ci-session-badge').textContent=labels[i]||['北部場次','南部場次'][i];
   updateNameDropdown('');
   clearNameStatus();
+  updateCiLockUI();
 }
 function selectCoSession(i){
   coSession=i;
@@ -711,6 +736,7 @@ function refreshAdmin(){
   document.getElementById('adm-api-url').value=getApiUrl();
   updateAdmCoStatus();
   updateAdmCodeStatus();
+  updateAdmCiStatus();
 }
 function saveSessionLabels(){
   lsSave('icope_sess_labels',[document.getElementById('adm-s0-label').value.trim(),document.getElementById('adm-s1-label').value.trim()]);
@@ -737,6 +763,32 @@ function checkApiWarn(){
   if(el) el.classList.toggle('show',!getApiUrl());
 }
 function getAdmSess(n){return parseInt(document.querySelector(`input[name="${n}"]:checked`).value);}
+
+// ── 報到截止 ──
+function ciLocked(){return ls('icope_ci_locked',[false,false]);}
+function saveCiLocked(v){lsSave('icope_ci_locked',v);}
+function lockCheckin(){
+  const sess=getAdmSess('adm-ci-sess');
+  const v=ciLocked(); v[sess]=true; saveCiLocked(v);
+  updateCiLockUI(); updateAdmCiStatus();
+  alert(['北部場','南部場'][sess]+'報到已截止');
+}
+function unlockCheckin(){
+  const sess=getAdmSess('adm-ci-sess');
+  const v=ciLocked(); v[sess]=false; saveCiLocked(v);
+  updateCiLockUI(); updateAdmCiStatus();
+}
+function updateCiLockUI(){
+  const locked=ciLocked()[ciSession];
+  document.getElementById('ci-locked').style.display=locked?'block':'none';
+  document.getElementById('ci-content').style.display=locked?'none':'block';
+}
+function updateAdmCiStatus(){
+  const v=ciLocked();
+  const labels=['北部場','南部場'];
+  const parts=labels.map((l,i)=>l+'：'+(v[i]?'🔒 已截止':'🟢 開放中'));
+  document.getElementById('adm-ci-status').textContent=parts.join('　');
+}
 function updateAdmCoStatus(){
   const t=coTimes()[0];
   document.getElementById('adm-co-status').textContent=t?`目前設定：${t} 後開放`:'目前設定：隨時可簽退';
@@ -823,6 +875,7 @@ function exportCsv(type){
 window.addEventListener('load', async ()=>{
   initSig();
   updateCoLockUI();
+  updateCiLockUI();
   checkApiWarn();
   await loadNameList();
 });
