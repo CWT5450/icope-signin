@@ -357,6 +357,21 @@
       <button class="btn btn-sm btn-primary" onclick="refreshRecords()">🔄 更新</button>
     </div>
   </div>
+
+  <div class="card" style="background:#e8f5f3;border-color:var(--teal);">
+    <div class="card-title">產生列印簽到表</div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:12px;">將目前簽到紀錄（含簽名圖）寫入試算表「列印簽到表」分頁，再開啟試算表匯出 PDF。</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <label><input type="radio" name="print-sess" value="north" checked> 北部場（6/16）</label>
+      <label><input type="radio" name="print-sess" value="south"> 南部場（6/30）</label>
+    </div>
+    <div class="row">
+      <button class="btn btn-sm btn-primary" onclick="buildPrint()" id="print-btn">🖨️ 產生列印簽到表</button>
+      <a id="print-sheet-link" href="https://docs.google.com/spreadsheets/d/1qC--DvqgqpKHFvf4wZS6rqe3AKBc-XhOmSZJP3tT4qg/edit#gid=942385579" target="_blank"
+         class="btn btn-sm btn-secondary" style="display:none;text-decoration:none;">📄 開啟試算表</a>
+    </div>
+    <div id="print-status" style="font-size:12px;margin-top:8px;color:var(--gray);"></div>
+  </div>
   <div class="card">
     <div class="card-title">簽到紀錄</div>
     <div class="table-wrap">
@@ -850,6 +865,29 @@ function refreshRecords(){
     <td style="font-size:11px">${r.checkin||'--'}</td>
     <td style="font-size:11px">${r.checkout||'--'}</td>
   </tr>`).join('');
+}
+
+async function buildPrint(){
+  const apiUrl=getApiUrl();
+  if(!apiUrl){showPrintStatus('error','❌ 尚未設定 API 網址，請至管理頁設定');return;}
+  const sess=document.querySelector('input[name="print-sess"]:checked').value;
+  const btn=document.getElementById('print-btn');
+  btn.disabled=true; btn.textContent='⏳ 產生中…';
+  showPrintStatus('','');
+  document.getElementById('print-sheet-link').style.display='none';
+  try{
+    await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'buildPrint',printSession:sess})});
+    showPrintStatus('success','✅ 列印簽到表已產生！請點右側按鈕開啟試算表，再匯出 PDF。');
+    document.getElementById('print-sheet-link').style.display='inline-block';
+  }catch(e){
+    showPrintStatus('error','❌ 產生失敗，請確認網路與 API 設定');
+  }
+  btn.disabled=false; btn.textContent='🖨️ 產生列印簽到表';
+}
+function showPrintStatus(type,msg){
+  const el=document.getElementById('print-status');
+  el.textContent=msg;
+  el.style.color=type==='success'?'#0a7c6e':type==='error'?'#c0392b':'var(--gray)';
 }
 
 function exportCsv(type){
