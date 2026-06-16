@@ -938,13 +938,44 @@ function changePw(){
 // ═══════════════════════════════════════════════
 //  RECORDS
 // ═══════════════════════════════════════════════
-function refreshRecords(){
+// 把試算表回傳的紀錄格式，正規化成前端用的格式
+function normalizeRemoteRec(r){
+  const labels=sessionLabels();
+  const s=(r.session===1||r.session==='1'||r.session==='南部場次'||r.session===labels[1])?1:0;
+  const fmt=t=>{
+    if(!t) return '';
+    if(typeof t==='string'&&/^\d{4}-\d{2}-\d{2}T/.test(t)){const d=new Date(t);if(!isNaN(d))return d.toLocaleString('zh-TW');}
+    return t;
+  };
+  const reg=r.registered;
+  return {
+    session:s, name:r.name, unit:r.unit, idno:r.idno, role:r.role,
+    checkin:fmt(r.checkin), checkout:fmt(r.checkout),
+    registered:(reg===true||reg==='✅'||reg==='TRUE'||reg===true||reg==='已報名'||reg==='Y')
+  };
+}
+
+async function refreshRecords(){
   const sess=document.querySelector('input[name="rec-sess"]:checked').value;
-  const recs=records().filter(r=>sess==='all'||r.session===parseInt(sess));
+  const tbody=document.getElementById('rec-tbody');
+  let allRecs=records();   // 預設：本機備份
+  const apiUrl=getApiUrl();
+  if(apiUrl){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#9fb3b0;padding:16px">⏳ 從試算表載入中…</td></tr>';
+    try{
+      const res=await fetch(apiUrl+'?action=getRecords');
+      const json=await res.json();
+      if(json.success&&Array.isArray(json.records)){
+        allRecs=json.records.map(normalizeRemoteRec);
+      }
+    }catch(e){
+      console.warn('紀錄抓取失敗，改用本機紀錄',e);
+    }
+  }
+  const recs=allRecs.filter(r=>sess==='all'||r.session===parseInt(sess));
   document.getElementById('rec-cnt-ci').textContent=recs.filter(r=>r.checkin).length;
   document.getElementById('rec-cnt-co').textContent=recs.filter(r=>r.checkout).length;
   document.getElementById('rec-cnt-reg').textContent=recs.filter(r=>r.registered).length;
-  const tbody=document.getElementById('rec-tbody');
   if(!recs.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#9fb3b0;padding:16px">尚無紀錄</td></tr>';return;}
   tbody.innerHTML=recs.map(r=>`<tr>
     <td>${r.session===0?'北':'南'}</td>
