@@ -785,19 +785,28 @@ async function submitCheckout(){
   if(!name){showAlert('co-alert','error','請輸入姓名');return;}
   const cs=codes();
   if(cs[coSession]&&codeIn!==String(cs[coSession])){showAlert('co-alert','error','驗證碼錯誤');return;}
+  const now=new Date().toLocaleString('zh-TW');
+  const sessionLabel=sessionLabels()[coSession]||['北部場次','南部場次'][coSession];
+
+  // 更新本機（若這台剛好有該筆簽到）
   const recs=records();
   const rec=recs.find(r=>r.session===coSession&&r.name===name&&r.checkin);
-  if(!rec){showAlert('co-alert','error','找不到簽到紀錄');return;}
-  if(rec.checkout){showAlert('co-alert','info','您已完成簽退');return;}
-  const now=new Date().toLocaleString('zh-TW');
-  rec.checkout=now;
-  saveRecords(recs);
+  if(rec){rec.checkout=now;saveRecords(recs);}
 
+  // 雲端簽退（以雲端為準、可跨裝置；後端只會補「尚未簽退」的列）
   const apiUrl=getApiUrl();
-  const sessionLabel=sessionLabels()[coSession]||['北部場次','南部場次'][coSession];
+  let coOk=true;
   if(apiUrl){
-    try{await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkout',session:sessionLabel,name,checkoutTime:now})});}
-    catch(e){console.warn('雲端簽退失敗',e);}
+    document.getElementById('loading-overlay').classList.add('show');
+    try{
+      const res=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkout',session:sessionLabel,name,checkoutTime:now})});
+      try{const j=await res.json(); if(j&&j.updated===false) coOk=false;}catch(_){}
+    }catch(e){console.warn('雲端簽退失敗',e);coOk=false;}
+    document.getElementById('loading-overlay').classList.remove('show');
+  }
+  if(apiUrl&&!coOk){
+    showAlert('co-alert','error','⚠️ 簽退失敗：查無雲端簽到紀錄或網路問題，請確認此人已簽到後再試');
+    return;
   }
   document.getElementById('co-name').value='';
   document.getElementById('co-code').value='';
