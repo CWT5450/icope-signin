@@ -159,6 +159,11 @@
       <div class="name-status" id="name-status"></div>
     </div>
 
+    <div class="form-group" id="ci-email-row" style="display:none;">
+      <label>📧 Email（現場報名必填，用於寄送研習證明）</label>
+      <input type="email" id="ci-email" placeholder="example@mail.com" autocomplete="off">
+    </div>
+
     <div class="form-group">
       <label>② 服務單位</label>
       <input type="text" id="ci-unit" placeholder="自動帶入或手動填寫">
@@ -587,6 +592,8 @@ function checkNameStatus(name){
   el.className='name-status '+(found?'ok':'ng');
   el.textContent=found?'✅ 已確認報名，歡迎參加！':'ℹ️ 此姓名不在名單中，可直接以「現場報名」完成報到';
   btn.disabled=false;
+  const emRow=document.getElementById('ci-email-row');
+  if(emRow) emRow.style.display=found?'none':'block';
 }
 
 function clearNameStatus(){
@@ -594,6 +601,8 @@ function clearNameStatus(){
   el.className='name-status';
   el.textContent='';
   document.getElementById('ci-submit-btn').disabled=false;
+  const emRow=document.getElementById('ci-email-row');
+  if(emRow) emRow.style.display='none';
 }
 
 // ═══════════════════════════════════════════════
@@ -648,8 +657,13 @@ async function submitCheckin(){
 
   const list=getCurrentList();
   const isRegistered=list.includes(name);
+  const email=document.getElementById('ci-email').value.trim();
   if(!isRegistered){
     if(!confirm('此姓名不在報名名單中。\n是否以「現場報名」方式完成報到？')) return;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      showAlert('ci-alert','error','現場報名請填寫正確的 Email，以便寄送研習證明');
+      return;
+    }
   }
 
   const sig=getSigData();
@@ -674,7 +688,7 @@ async function submitCheckin(){
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
     try{
-      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered})});
+      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,email})});
     }catch(e){console.warn('雲端上傳失敗，資料已存本機',e);}
     document.getElementById('loading-overlay').classList.remove('show');
   }
@@ -684,6 +698,7 @@ async function submitCheckin(){
   document.getElementById('ci-unit').value='';
   document.getElementById('ci-idno').value='';
   document.getElementById('ci-role').value='';
+  document.getElementById('ci-email').value='';
   clearNameStatus();
   clearSig();
 }
