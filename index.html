@@ -585,8 +585,8 @@ function checkNameStatus(name){
   const list=getCurrentList();
   const found=list.includes(name);
   el.className='name-status '+(found?'ok':'ng');
-  el.textContent=found?'✅ 已確認報名，歡迎參加！':'❌ 查無此報名資料，請聯繫工作人員確認';
-  btn.disabled=!found;
+  el.textContent=found?'✅ 已確認報名，歡迎參加！':'ℹ️ 此姓名不在名單中，可直接以「現場報名」完成報到';
+  btn.disabled=false;
 }
 
 function clearNameStatus(){
