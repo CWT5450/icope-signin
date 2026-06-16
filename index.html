@@ -621,7 +621,16 @@ function initSig(){
 }
 function updateSigHint(){document.getElementById('sigHint').style.opacity=sigHasMark?'0':'1';}
 function clearSig(){if(sigCtx)sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);sigHasMark=false;updateSigHint();}
-function getSigData(){return sigHasMark?sigCanvas.toDataURL('image/jpeg',0.7):null;}
+function getSigData(){
+  if(!sigHasMark) return null;
+  // JPEG 不支援透明，未畫到的區域會變黑底。匯出前在筆跡「底下」墊一層白色背景，恢復白底黑字。
+  sigCtx.save();
+  sigCtx.globalCompositeOperation='destination-over';
+  sigCtx.fillStyle='#ffffff';
+  sigCtx.fillRect(0,0,sigCanvas.width,sigCanvas.height);
+  sigCtx.restore();
+  return sigCanvas.toDataURL('image/jpeg',0.7);
+}
 
 // ═══════════════════════════════════════════════
 //  CHECKIN SUBMIT
