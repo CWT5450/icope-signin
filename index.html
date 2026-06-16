@@ -685,12 +685,23 @@ async function submitCheckin(){
 
   // 雲端上傳
   const apiUrl=getApiUrl();
+  let cloudOk=true;
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
     try{
-      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,email})});
-    }catch(e){console.warn('雲端上傳失敗，資料已存本機',e);}
+      const res=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,email})});
+      try{ const json=await res.json(); if(json&&json.success===false) cloudOk=false; }catch(_){ /* 回應讀不到不判定失敗，避免誤報 */ }
+    }catch(e){console.warn('雲端上傳失敗',e);cloudOk=false;}
     document.getElementById('loading-overlay').classList.remove('show');
+  }
+
+  // 上傳失敗：回滾本機這筆，讓使用者可重新送出，並明確提示（不再假裝成功）
+  if(apiUrl&&!cloudOk){
+    const back=records();
+    const i=back.findIndex(r=>r.session===ciSession&&r.name===name);
+    if(i>=0){ if(exists){back[i].checkin=null;} else {back.splice(i,1);} saveRecords(back); }
+    showAlert('ci-alert','error','⚠️ 上傳失敗，資料尚未送出！請確認網路連線後，再按一次「確認簽到」');
+    return;
   }
 
   showAlert('ci-alert','success','✅ 簽到完成！感謝您的參與');
