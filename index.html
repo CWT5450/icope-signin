@@ -638,7 +638,10 @@ async function submitCheckin(){
   if(!name){showAlert('ci-alert','error','請輸入姓名');return;}
 
   const list=getCurrentList();
-  if(!list.includes(name)){showAlert('ci-alert','error','查無報名資料，請聯繫工作人員');return;}
+  const isRegistered=list.includes(name);
+  if(!isRegistered){
+    if(!confirm('此姓名不在報名名單中。\n是否以「現場報名」方式完成報到？')) return;
+  }
 
   const sig=getSigData();
   if(!sig){showAlert('ci-alert','error','請完成電子簽名');return;}
@@ -653,8 +656,8 @@ async function submitCheckin(){
   const recs=records();
   const exists=recs.find(r=>r.session===ciSession&&r.name===name);
   if(exists&&exists.checkin){showAlert('ci-alert','info','您已完成簽到');return;}
-  if(exists){exists.checkin=now;exists.sig=sig;exists.unit=unit;exists.idno=idno;exists.role=role;}
-  else{recs.push({id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,registered:true});}
+  if(exists){exists.checkin=now;exists.sig=sig;exists.unit=unit;exists.idno=idno;exists.role=role;exists.registered=isRegistered;}
+  else{recs.push({id:Date.now(),session:ciSession,name,unit,idno,role,checkin:now,checkout:null,sig,registered:isRegistered});}
   saveRecords(recs);
 
   // 雲端上傳
@@ -662,7 +665,7 @@ async function submitCheckin(){
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
     try{
-      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:true})});
+      await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered})});
     }catch(e){console.warn('雲端上傳失敗，資料已存本機',e);}
     document.getElementById('loading-overlay').classList.remove('show');
   }
