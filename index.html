@@ -46,7 +46,7 @@
   .name-status.ng{display:block;background:#fdecea;color:#c0392b;}
 
   .sig-wrap{border:1.5px solid var(--border);border-radius:9px;background:#fafafa;overflow:hidden;position:relative;cursor:crosshair;}
-  canvas{display:block;width:100%;height:130px;}
+  canvas{display:block;width:100%;height:200px;}
   .sig-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#b0c4c2;font-size:13px;pointer-events:none;transition:opacity 0.2s;}
   .btn{padding:11px 18px;border:none;border-radius:9px;font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
   .btn-primary{background:var(--teal);color:white;width:100%;padding:14px;font-size:15px;margin-top:6px;}
@@ -131,14 +131,14 @@
   <div id="ci-locked" style="display:none;">
     <div class="card" style="text-align:center;padding:30px 20px;background:#fdecea;border-color:#e74c3c;">
       <div style="font-size:48px;margin-bottom:10px;">🔒</div>
-      <div style="font-size:17px;font-weight:800;color:#c0392b;margin-bottom:6px;">報到已截止</div>
-      <div style="font-size:13px;color:#888;">如有問題請洽工作人員</div>
+      <div id="ci-locked-title" style="font-size:17px;font-weight:800;color:#c0392b;margin-bottom:6px;">報到已截止</div>
+      <div id="ci-locked-msg" style="font-size:13px;color:#888;margin-bottom:16px;">如有問題請洽工作人員</div>
+      <button id="ci-locked-guide" class="btn btn-primary" onclick="switchTab('checkout')" style="display:none;max-width:260px;margin:0 auto;">🚪 前往簽退</button>
     </div>
   </div>
 
   <div id="ci-content">
-  <div class="card" id="ci-sess-card">
-    <div class="card-title">選擇場次</div>
+  <div class="card" id="ci-sess-card" style="text-align:center;padding:12px 18px;">
     <div class="sess-btns" id="ci-sess-btns">
       <button class="sess-btn selected" id="ci-s0" onclick="selectCiSession(0)">🔵 北部場次</button>
       <button class="sess-btn" id="ci-s1" onclick="selectCiSession(1)">🔴 南部場次</button>
@@ -164,15 +164,17 @@
       <input type="email" id="ci-email" placeholder="example@mail.com" autocomplete="off">
     </div>
 
-    <div class="form-group">
-      <label>② 服務單位</label>
-      <input type="text" id="ci-unit" placeholder="自動帶入或手動填寫">
+    <!-- 服務單位：已報名者背景自動帶入並隱藏；現場報名者（不在名單）才顯示此欄請其填寫 -->
+    <div class="form-group" id="ci-unit-row" style="display:none;">
+      <label>🏢 服務單位（現場報名必填）</label>
+      <input type="text" id="ci-unit" placeholder="請填寫服務單位">
     </div>
 
     <div class="form-group">
-      <label>③ 身份類別</label>
+      <label>② 身份類別</label>
       <select id="ci-role">
         <option value="">-- 請選擇 --</option>
+        <option value="行政人員">行政人員</option>
         <option value="護理師">護理師</option>
         <option value="醫師">醫師</option>
         <option value="物理治療師">物理治療師</option>
@@ -181,17 +183,16 @@
         <option value="社工師">社工師</option>
         <option value="衛教師">衛教師</option>
         <option value="其他醫事人員">其他醫事人員</option>
-        <option value="行政人員">行政人員</option>
       </select>
     </div>
 
     <div class="form-group">
-      <label>④ 身份證字號（申請繼續教育積分必填）</label>
+      <label>③ 身份證字號（申請繼續教育積分必填）</label>
       <input type="text" id="ci-idno" placeholder="A123456789" maxlength="10" style="text-transform:uppercase">
     </div>
 
     <div class="form-group">
-      <label>⑤ 電子簽名</label>
+      <label>④ 電子簽名</label>
       <div class="sig-wrap" id="ci-sig-wrap">
         <canvas id="sigCanvas"></canvas>
         <div class="sig-hint" id="sigHint">請在此處簽名</div>
@@ -208,7 +209,7 @@
 <!-- ══ 簽退頁 ══ -->
 <div id="page-checkout" class="page">
   <div class="card" id="co-sess-card">
-    <div class="card-title">選擇場次</div>
+    <div class="card-title">場次資訊</div>
     <div class="sess-btns" id="co-sess-btns">
       <button class="sess-btn selected" id="co-s0" onclick="selectCoSession(0)">🔵 北部場次</button>
       <button class="sess-btn" id="co-s1" onclick="selectCoSession(1)">🔴 南部場次</button>
@@ -247,7 +248,7 @@
     </div>
 
     <!-- 確認勾選區 -->
-    <div id="co-survey-confirm" style="display:none;margin-top:14px;">
+    <div id="co-survey-confirm" style="display:block;margin-top:14px;">
       <label onclick="toggleSurveyDone()"
              style="display:flex;align-items:center;gap:12px;padding:14px 16px;
                     background:white;border:2px solid #f57c00;border-radius:12px;cursor:pointer;
@@ -263,9 +264,11 @@
   </div>
 
   <div class="card">
-    <div id="co-locked" style="display:none;text-align:center;padding:20px;color:var(--gray);">
-      <div style="font-size:36px;margin-bottom:8px;">🔒</div>
-      <div style="font-size:14px;">簽退尚未開放<br>請依活動安排時間再行簽退</div>
+    <div id="co-locked" style="display:none;text-align:center;padding:24px 16px;">
+      <div style="font-size:44px;margin-bottom:10px;">🔒</div>
+      <div style="font-size:17px;font-weight:800;color:#c0392b;margin-bottom:6px;">簽退尚未開放</div>
+      <div id="co-locked-msg" style="font-size:14px;color:#666;margin-bottom:16px;line-height:1.7;">活動進行中，請先完成「簽到」。</div>
+      <button class="btn btn-primary" onclick="switchTab('checkin')" style="max-width:260px;margin:0 auto;">✍️ 先前往簽到</button>
     </div>
     <div id="co-form">
       <div class="card-title">Step 2：確認簽退</div>
@@ -273,7 +276,7 @@
         <label>您的姓名</label>
         <input type="text" id="co-name" placeholder="請輸入姓名">
       </div>
-      <div class="form-group">
+      <div class="form-group" style="display:none;"><!-- 隱藏：驗證碼依賴管理員本機設定，QR 學員手機讀不到 -->
         <label>驗證碼（如有設定）</label>
         <input type="text" id="co-code" placeholder="請輸入驗證碼">
       </div>
@@ -300,17 +303,18 @@
   <div class="card">
     <div class="card-title">報到截止設定</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
-      <label><input type="radio" name="adm-ci-sess" value="0" checked> 北部場</label>
-      <label><input type="radio" name="adm-ci-sess" value="1"> 南部場</label>
+      <label><input type="radio" name="adm-ci-sess" value="1" checked> 南部場</label>
     </div>
     <p id="adm-ci-status" style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--gray);"></p>
     <div class="row">
       <button class="btn btn-sm btn-danger" onclick="lockCheckin()" style="background:#fdecea;color:#c0392b;">🔒 立即截止報到</button>
       <button class="btn btn-sm btn-secondary" onclick="unlockCheckin()">🔓 重新開放報到</button>
     </div>
+    <button class="btn btn-sm btn-secondary" onclick="autoCheckin()" style="margin-top:8px;">🕒 恢復依時間自動切換</button>
+    <p style="font-size:11px;color:#999;margin-top:8px;line-height:1.5;">預設依時間自動切換（15:30 起自動鎖簽到、開放簽退）。按「立即截止」或「重新開放」可手動覆蓋；「重新開放」會強制打開、覆蓋時間鎖（供遲到者補簽到）。</p>
   </div>
 
-  <div class="card">
+  <div class="card" style="display:none;"><!-- 隱藏：簽退時間改由前端內建排程控制，不再依賴管理員本機設定 -->
     <div class="card-title">簽退設定</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-sess" value="0" checked onchange="loadCoTimeInput()"> 北部場</label>
@@ -327,7 +331,7 @@
     <p id="adm-co-status" style="font-size:12px;color:var(--gray);margin-top:8px;"></p>
   </div>
 
-  <div class="card">
+  <div class="card" style="display:none;"><!-- 隱藏：驗證碼依賴管理員本機，QR 學員讀不到 -->
     <div class="card-title">簽退驗證碼</div>
     <div class="radio-group" style="display:flex;gap:12px;margin-bottom:10px;">
       <label><input type="radio" name="adm-vc-sess" value="0" checked> 北部場</label>
@@ -341,7 +345,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="display:none;"><!-- 隱藏：場次名稱依賴管理員本機設定 -->
     <div class="card-title">場次說明</div>
     <div class="form-group">
       <label>北部場次名稱</label>
@@ -382,9 +386,8 @@
   <div class="card">
     <div class="card-title">統計</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <label><input type="radio" name="rec-sess" value="all" checked onchange="refreshRecords()"> 全部</label>
-      <label><input type="radio" name="rec-sess" value="0" onchange="refreshRecords()"> 北部場</label>
-      <label><input type="radio" name="rec-sess" value="1" onchange="refreshRecords()"> 南部場</label>
+      <label><input type="radio" name="rec-sess" value="1" checked onchange="refreshRecords()"> 南部場</label>
+      <label><input type="radio" name="rec-sess" value="all" onchange="refreshRecords()"> 全部（含歷史）</label>
     </div>
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-num" id="rec-cnt-ci">0</div><div class="stat-label">已簽到</div></div>
@@ -466,8 +469,7 @@ async function loadNameList() {
       PRELOADED_SOUTH = json.south;
       UNIT_MAP        = json.unitMap || {};
       const el = document.getElementById('list-status');
-      el.textContent = `✅ 名單已更新（北部 ${json.north.length}人 ／ 南部 ${json.south.length}人）`;
-      el.style.color = '#0a7c6e';
+      el.style.display = 'none';   // 精簡：名單載入成功後隱藏提示
     }
   } catch(e) {
     console.warn('名單抓取失敗，使用備份名單', e);
@@ -479,7 +481,7 @@ async function loadNameList() {
 // ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
-let ciSession = 0, coSession = 0;
+let ciSession = 1, coSession = 1;   // 單一場次：固定南部場
 let sigDrawing = false, sigHasMark = false;
 let sigCtx, sigCanvas;
 let _pendingTab = null;
@@ -508,6 +510,8 @@ function switchTab(id, btn) {
   else document.querySelectorAll('.tab-btn').forEach(b=>{if(b.textContent.includes(id==='checkin'?'簽到':id==='checkout'?'簽退':id==='admin'?'管理':'紀錄'))b.classList.add('active');});
   if(id==='records') refreshRecords();
   if(id==='admin') refreshAdmin();
+  if(id==='checkout') updateCoLockUI();
+  if(id==='checkin') updateCiLockUI();
   checkApiWarn();
 }
 
@@ -594,6 +598,15 @@ function checkNameStatus(name){
   btn.disabled=false;
   const emRow=document.getElementById('ci-email-row');
   if(emRow) emRow.style.display=found?'none':'block';
+  // 服務單位：已報名者背景自動帶入並隱藏；現場報名者顯示欄位請其填寫
+  const unitRow=document.getElementById('ci-unit-row');
+  const unitInput=document.getElementById('ci-unit');
+  if(found){
+    if(unitRow) unitRow.style.display='none';
+    if(unitInput && UNIT_MAP[name]) unitInput.value=UNIT_MAP[name];
+  } else {
+    if(unitRow) unitRow.style.display='block';
+  }
 }
 
 function clearNameStatus(){
@@ -603,6 +616,8 @@ function clearNameStatus(){
   document.getElementById('ci-submit-btn').disabled=false;
   const emRow=document.getElementById('ci-email-row');
   if(emRow) emRow.style.display='none';
+  const unitRow=document.getElementById('ci-unit-row');
+  if(unitRow) unitRow.style.display='none';
 }
 
 // ═══════════════════════════════════════════════
@@ -614,7 +629,7 @@ function initSig(){
   const wrap=document.getElementById('ci-sig-wrap');
   const dpr=Math.min(window.devicePixelRatio||1,1.5);
   sigCanvas.width=wrap.clientWidth*dpr;
-  sigCanvas.height=130*dpr;
+  sigCanvas.height=200*dpr;
   sigCtx.scale(dpr,dpr);
   sigCtx.strokeStyle='#0a7c6e';
   sigCtx.lineWidth=2.5;
@@ -651,6 +666,14 @@ function showAlert(id,type,msg){
   setTimeout(()=>el.classList.remove('show'),5000);
 }
 
+// 帶逾時的 fetch：後台塞住時不會一直轉圈，逾時即中止 → 走失敗流程提示重送（預設 25 秒）
+async function fetchWithTimeout(url,opts={},ms=25000){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),ms);
+  try{ return await fetch(url,{...opts,signal:ctrl.signal}); }
+  finally{ clearTimeout(timer); }
+}
+
 async function submitCheckin(){
   const name=document.getElementById('ci-name').value.trim();
   if(!name){showAlert('ci-alert','error','請輸入姓名');return;}
@@ -662,6 +685,10 @@ async function submitCheckin(){
     if(!confirm('此姓名不在報名名單中。\n是否以「現場報名」方式完成報到？')) return;
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
       showAlert('ci-alert','error','現場報名請填寫正確的 Email，以便寄送研習證明');
+      return;
+    }
+    if(!document.getElementById('ci-unit').value.trim()){
+      showAlert('ci-alert','error','現場報名請填寫服務單位');
       return;
     }
   }
@@ -688,11 +715,14 @@ async function submitCheckin(){
   let cloudOk=true;
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
+    const sbtn=document.getElementById('ci-submit-btn');
+    const sbtnTxt=sbtn.textContent; sbtn.disabled=true; sbtn.textContent='⏳ 上傳中…';
     try{
-      const res=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,email})});
+      const res=await fetchWithTimeout(apiUrl,{method:'POST',body:JSON.stringify({action:'checkin',session:sessionLabel,name,unit,idno,role,checkinTime:now,signature:sig,registered:isRegistered,onsite:!isRegistered,email})});
       try{ const json=await res.json(); if(json&&json.success===false) cloudOk=false; }catch(_){ /* 回應讀不到不判定失敗，避免誤報 */ }
     }catch(e){console.warn('雲端上傳失敗',e);cloudOk=false;}
     document.getElementById('loading-overlay').classList.remove('show');
+    sbtn.disabled=false; sbtn.textContent=sbtnTxt;
   }
 
   // 上傳失敗：回滾本機這筆，讓使用者可重新送出，並明確提示（不再假裝成功）
@@ -771,12 +801,40 @@ function updateCoSubmitBtn(){
 // ═══════════════════════════════════════════════
 //  CHECKOUT
 // ═══════════════════════════════════════════════
+// ── 測試期自動切換（月份從 0 起算，6 月 = 5）──
+// 2026/6/29 21:00 之前＝測試期：簽退隨時可測（模擬簽退時段、簽到自動鎖）。
+// 到 6/29 21:00 後，程式自動回歸正式排程（簽退 6/30 15:30 才開）→ 6/30 不需再部署。
+const TEST_UNTIL = new Date(2026, 5, 29, 21, 0, 0);
+const _inTest = new Date() < TEST_UNTIL;
+
+// 內建場次簽退開放時間（前端硬編，QR 學員不需管理員本機設定即生效）
+const CO_OPEN_SCHEDULE = _inTest
+  ? [ new Date(2000,0,1), new Date(2000,0,1) ]   // 測試期：設在很久以前＝隨時開放簽退
+  : [ new Date(2026,5,16,15,30,0),               // 北部場 6/16 15:30（已結束）
+      new Date(2026,5,30,15,30,0) ];             // 南部場 6/30 15:30
+// 南部場活動日：此日之前一律鎖簽退，避免學員提前把簽退當簽到（測試期不擋）
+const CO_EVENT_DAY = _inTest ? new Date(2000,0,1) : new Date(2026,5,30,0,0,0);
 function updateCoLockUI(){
-  const t=coTimes()[coSession];
-  let open=true;
-  if(t){const now=new Date();const[h,m]=t.split(':').map(Number);const target=new Date();target.setHours(h,m,0,0);if(now<target)open=false;}
-  document.getElementById('co-locked').style.display=open?'none':'block';
-  document.getElementById('co-form').style.display=open?'block':'none';
+  const now=new Date();
+  const openAt=CO_OPEN_SCHEDULE[coSession];
+  let open=openAt?(now>=openAt):true;
+  if(now<CO_EVENT_DAY) open=false;   // 活動日之前一律鎖
+  const lock=document.getElementById('co-locked');
+  const form=document.getElementById('co-form');
+  const survey=document.getElementById('co-survey-card');
+  lock.style.display=open?'none':'block';
+  form.style.display=open?'block':'none';
+  if(survey) survey.style.display=open?'block':'none';   // 未開放時連問卷卡片一起收起，畫面只引導去簽到
+  if(!open){
+    // 顯示「下一個」簽退開放時間：取尚未到的最早場次，否則用目前場次
+    const next=CO_OPEN_SCHEDULE.find(d=>now<d)||openAt;
+    const msg=document.getElementById('co-locked-msg');
+    if(msg&&next){
+      const hh=String(next.getHours()).padStart(2,'0');
+      const mm=String(next.getMinutes()).padStart(2,'0');
+      msg.innerHTML=`簽退將於 <b>${next.getMonth()+1}/${next.getDate()} ${hh}:${mm}</b> 開放。<br>活動進行中，請先完成「簽到」。`;
+    }
+  }
 }
 
 async function submitCheckout(){
@@ -798,11 +856,14 @@ async function submitCheckout(){
   let coOk=true;
   if(apiUrl){
     document.getElementById('loading-overlay').classList.add('show');
+    const cbtn=document.getElementById('co-submit-btn');
+    const cbtnTxt=cbtn.textContent; cbtn.disabled=true; cbtn.textContent='⏳ 上傳中…';
     try{
-      const res=await fetch(apiUrl,{method:'POST',body:JSON.stringify({action:'checkout',session:sessionLabel,name,checkoutTime:now})});
+      const res=await fetchWithTimeout(apiUrl,{method:'POST',body:JSON.stringify({action:'checkout',session:sessionLabel,name,checkoutTime:now})});
       try{const j=await res.json(); if(j&&j.updated===false) coOk=false;}catch(_){}
     }catch(e){console.warn('雲端簽退失敗',e);coOk=false;}
     document.getElementById('loading-overlay').classList.remove('show');
+    cbtn.disabled=false; cbtn.textContent=cbtnTxt;
   }
   if(apiUrl&&!coOk){
     showAlert('co-alert','error','⚠️ 簽退失敗：查無雲端簽到紀錄或網路問題，請確認此人已簽到後再試');
@@ -836,7 +897,8 @@ function resetSurveyStep(){
   sessionStorage.removeItem('icope_survey_opened');
   const cb = document.getElementById('co-survey-done');
   cb.checked = false;
-  document.getElementById('co-survey-confirm').style.display='none';
+  // 打勾區常駐顯示：簽退後不藏回（依需求改為直接顯示）
+  document.getElementById('co-survey-confirm').style.display='block';
   const box = document.getElementById('co-survey-check-box');
   box.textContent='';
   box.style.background='white';
@@ -892,29 +954,60 @@ function checkApiWarn(){
 function getAdmSess(n){return parseInt(document.querySelector(`input[name="${n}"]:checked`).value);}
 
 // ── 報到截止 ──
-function ciLocked(){return ls('icope_ci_locked',[false,false]);}
-function saveCiLocked(v){lsSave('icope_ci_locked',v);}
+// 報到狀態（每場）：'auto'=依時間自動切換、'locked'=管理員強制截止、'open'=管理員強制開放
+function ciState(){return ls('icope_ci_state',['auto','auto']);}
+function saveCiState(v){lsSave('icope_ci_state',v);}
 function lockCheckin(){
   const sess=getAdmSess('adm-ci-sess');
-  const v=ciLocked(); v[sess]=true; saveCiLocked(v);
+  const v=ciState(); v[sess]='locked'; saveCiState(v);
   updateCiLockUI(); updateAdmCiStatus();
-  alert(['北部場','南部場'][sess]+'報到已截止');
+  alert(['北部場','南部場'][sess]+'：已強制截止報到');
 }
 function unlockCheckin(){
   const sess=getAdmSess('adm-ci-sess');
-  const v=ciLocked(); v[sess]=false; saveCiLocked(v);
+  const v=ciState(); v[sess]='open'; saveCiState(v);
   updateCiLockUI(); updateAdmCiStatus();
+  alert(['北部場','南部場'][sess]+'：已強制開放報到（覆蓋時間鎖）');
+}
+function autoCheckin(){
+  const sess=getAdmSess('adm-ci-sess');
+  const v=ciState(); v[sess]='auto'; saveCiState(v);
+  updateCiLockUI(); updateAdmCiStatus();
+  alert(['北部場','南部場'][sess]+'：已恢復依時間自動切換');
 }
 function updateCiLockUI(){
-  const locked=ciLocked()[ciSession];
-  document.getElementById('ci-locked').style.display=locked?'block':'none';
-  document.getElementById('ci-content').style.display=locked?'none':'block';
+  const st = ciState()[ciSession];   // 'auto' | 'locked' | 'open'
+  // 過了「開放簽退時間」(6/30 15:30) 即進入簽退時段
+  const openAt = (typeof CO_OPEN_SCHEDULE!=='undefined') ? CO_OPEN_SCHEDULE[ciSession] : null;
+  const checkoutTime = openAt ? (new Date() >= openAt) : false;
+  let locked, byCheckout;
+  if (st === 'locked')      { locked = true;  byCheckout = false; }       // 管理員強制截止
+  else if (st === 'open')   { locked = false; byCheckout = false; }       // 管理員強制開放（覆蓋時間鎖）
+  else                      { locked = checkoutTime; byCheckout = checkoutTime; } // auto：依時間
+  document.getElementById('ci-locked').style.display = locked ? 'block' : 'none';
+  document.getElementById('ci-content').style.display = locked ? 'none' : 'block';
+  const guide = document.getElementById('ci-locked-guide');
+  const title = document.getElementById('ci-locked-title');
+  const msg   = document.getElementById('ci-locked-msg');
+  if (byCheckout) {            // 自動進入簽退時段：引導去簽退
+    if (title) title.textContent = '簽到已結束';
+    if (msg)   msg.textContent   = '現在是簽退時間，請改至「簽退」。';
+    if (guide) guide.style.display = 'block';
+  } else {                     // 管理員強制截止：維持原訊息、不引導
+    if (title) title.textContent = '報到已截止';
+    if (msg)   msg.textContent   = '如有問題請洽工作人員';
+    if (guide) guide.style.display = 'none';
+  }
 }
 function updateAdmCiStatus(){
-  const v=ciLocked();
-  const labels=['北部場','南部場'];
-  const parts=labels.map((l,i)=>l+'：'+(v[i]?'🔒 已截止':'🟢 開放中'));
-  document.getElementById('adm-ci-status').textContent=parts.join('　');
+  const st=ciState()[1];
+  const openAt=(typeof CO_OPEN_SCHEDULE!=='undefined')?CO_OPEN_SCHEDULE[1]:null;
+  const checkoutTime=openAt?(new Date()>=openAt):false;
+  let txt;
+  if(st==='locked')    txt='🔒 已強制截止';
+  else if(st==='open') txt='🟢 已強制開放（覆蓋時間鎖）';
+  else                 txt=checkoutTime?'🔒 簽退時段自動鎖定':'🟢 開放中（自動）';
+  document.getElementById('adm-ci-status').textContent='南部場：'+txt;
 }
 function updateAdmCoStatus(){
   const sess=getAdmSess('adm-sess');
@@ -1086,19 +1179,19 @@ function autoDetectSessionByDate(){
 }
 
 function applyAutoSession(idx){
-  const labels=['🔵 北部場次','🔴 南部場次'];
+  const badgeText='🔴 南部場次　6/30 13:30–16:30';
   // 簽到頁
   selectCiSession(idx);
   document.getElementById('ci-sess-btns').style.display='none';
   document.getElementById('ci-session-badge').style.display='none';
   const ciBadge=document.getElementById('ci-auto-sess-badge');
-  ciBadge.textContent='📅 今日場次：'+labels[idx]+'（已自動選取）';
+  ciBadge.textContent=badgeText;
   ciBadge.style.display='block';
   // 簽退頁
   selectCoSession(idx);
   document.getElementById('co-sess-btns').style.display='none';
   const coBadge=document.getElementById('co-auto-sess-badge');
-  coBadge.textContent='📅 今日場次：'+labels[idx]+'（已自動選取）';
+  coBadge.textContent=badgeText;
   coBadge.style.display='block';
 }
 
@@ -1108,8 +1201,14 @@ window.addEventListener('load', async ()=>{
   updateCiLockUI();
   checkApiWarn();
   await loadNameList();
-  const autoIdx=autoDetectSessionByDate();
-  if(autoIdx!==null) applyAutoSession(autoIdx);
+  applyAutoSession(1);   // 單一場次：固定南部場，隱藏場次選擇
+  // 簽退時段（已過開放簽退時間且未被管理員另行截止）→ 直接帶到簽退頁
+  const _openAt = CO_OPEN_SCHEDULE[coSession];
+  if (_openAt && new Date() >= _openAt && ciState()[ciSession] !== 'open') {
+    switchTab('checkout');
+  }
+  // 每 30 秒重新判斷簽到/簽退鎖定，避免學員停留在頁面跨過開放時刻卻沒更新
+  setInterval(()=>{ updateCoLockUI(); updateCiLockUI(); }, 30000);
 });
 </script>
 </body>
